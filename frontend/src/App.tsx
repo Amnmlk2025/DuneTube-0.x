@@ -1,27 +1,67 @@
-import { useEffect, useState } from "react";
-import { getHealth } from "./lib/api";
+import { Suspense, useEffect } from "react";
+import { NavLink, Route, Routes } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
-export default function App() {
-  const [status, setStatus] = useState<string>("checking...");
-  const [error, setError] = useState<string>("");
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import Catalog from "./pages/Catalog";
+import Home from "./pages/Home";
+
+const App = () => {
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
-    getHealth()
-      .then(d => setStatus(d.status))
-      .catch(e => setError(String(e)));
-  }, []);
+    document.documentElement.dir = i18n.dir(i18n.language);
+    document.documentElement.lang = i18n.language;
+  }, [i18n.language]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="p-6 rounded-2xl shadow border w-[min(90vw,520px)]">
-        <h1 className="text-2xl font-bold mb-2">DuneTube — Health</h1>
-        <p className="mb-2">API base: <code>{import.meta.env.VITE_API_BASE}</code></p>
-        {error ? (
-          <p className="text-red-600">Error: {error}</p>
-        ) : (
-          <p className="text-green-700">Status: <b>{status}</b></p>
-        )}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-sand/40 text-slate-900">
+      <div className="mx-auto flex min-h-screen max-w-6xl flex-col px-6">
+        <header className="flex flex-wrap items-center justify-between gap-6 py-8">
+          <NavLink to="/" className="text-2xl font-bold text-primary-dark">
+            DuneTube
+          </NavLink>
+          <nav className="flex items-center gap-4 text-sm font-semibold text-slate-600">
+            <NavLink
+              to="/"
+              end
+              className={({ isActive }) =>
+                `rounded-full px-4 py-2 transition ${
+                  isActive ? "bg-primary text-white" : "hover:bg-primary/10"
+                }`
+              }
+            >
+              {t("nav.home")}
+            </NavLink>
+            <NavLink
+              to="/catalog"
+              className={({ isActive }) =>
+                `rounded-full px-4 py-2 transition ${
+                  isActive ? "bg-primary text-white" : "hover:bg-primary/10"
+                }`
+              }
+            >
+              {t("nav.catalog")}
+            </NavLink>
+          </nav>
+          <LanguageSwitcher />
+        </header>
+
+        <main className="flex-1">
+          <Suspense fallback={<p className="py-20 text-center text-slate-600">{t("catalog.loading")}</p>}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/catalog" element={<Catalog />} />
+            </Routes>
+          </Suspense>
+        </main>
+
+        <footer className="py-8 text-center text-sm text-slate-500">
+          © {new Date().getFullYear()} DuneTube · {t("footer.rights")}
+        </footer>
       </div>
     </div>
   );
-}
+};
+
+export default App;
