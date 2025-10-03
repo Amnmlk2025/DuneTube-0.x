@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import LanguageSwitcher from "./components/LanguageSwitcher";
 import Catalog from "./pages/Catalog";
+import CourseDetail from "./pages/CourseDetail";
 import Home from "./pages/Home";
 
 const App = () => {
@@ -52,6 +53,7 @@ const App = () => {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/catalog" element={<Catalog />} />
+              <Route path="/courses/:courseId" element={<CourseDetail />} />
             </Routes>
           </Suspense>
         </main>

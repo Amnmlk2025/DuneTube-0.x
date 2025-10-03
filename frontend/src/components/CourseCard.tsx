@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 import type { Course } from "../types/course";
 
@@ -10,11 +11,14 @@ const CourseCard = ({ course }: CourseCardProps) => {
   const { t } = useTranslation();
 
   return (
-    <article className="flex h-full flex-col justify-between rounded-2xl bg-white/90 p-6 shadow-lg ring-1 ring-slate-100 transition hover:-translate-y-1 hover:shadow-xl">
+    <Link
+      to={`/courses/${course.id}`}
+      className="group flex h-full flex-col justify-between rounded-2xl bg-white/90 p-6 shadow-lg ring-1 ring-slate-100 transition hover:-translate-y-1 hover:shadow-xl"
+    >
       <div className="space-y-3">
         <div>
           <p className="text-sm uppercase tracking-wide text-primary">{t("catalog.publisher")}</p>
-          <h3 className="mt-1 text-xl font-semibold text-slate-900">{course.title}</h3>
+          <h3 className="mt-1 text-xl font-semibold text-slate-900 group-hover:text-primary-dark">{course.title}</h3>
           <p className="text-sm text-slate-600">{course.publisher}</p>
         </div>
         <p className="text-sm leading-relaxed text-slate-700">{course.description}</p>
@@ -38,7 +42,7 @@ const CourseCard = ({ course }: CourseCardProps) => {
           </ul>
         ) : null}
       </div>
-    </article>
+    </Link>
   );
 };
 

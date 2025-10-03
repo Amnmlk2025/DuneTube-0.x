@@ -46,3 +46,62 @@ class Course(models.Model):
     @property
     def price_display(self) -> str:
         return f"{self.price_amount} {self.price_currency}"
+
+
+class Lesson(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="lessons")
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    video_url = models.URLField()
+    duration_seconds = models.PositiveIntegerField(default=0)
+    position = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["position", "id"]
+
+    def __str__(self) -> str:
+        return f"{self.course.title} :: {self.title}"
+
+
+class LessonProgress(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="lesson_progress",
+    )
+    lesson = models.ForeignKey(
+        Lesson,
+        on_delete=models.CASCADE,
+        related_name="progress_entries",
+    )
+    last_position = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("user", "lesson")
+        ordering = ["-updated_at"]
+
+    def __str__(self) -> str:
+        return f"{self.user.username}:{self.lesson_id}@{self.last_position}s"
+
+
+class LessonNote(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="lesson_notes",
+    )
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="notes")
+    body = models.TextField()
+    timestamp = models.PositiveIntegerField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+
+    def __str__(self) -> str:
+        return f"Note<{self.user.username}:{self.lesson_id}>"
