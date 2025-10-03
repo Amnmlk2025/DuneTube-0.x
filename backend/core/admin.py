@@ -17,16 +17,20 @@ class RoleAssignmentAdmin(admin.ModelAdmin):
 
 @admin.register(Course)
 class CourseAdmin(admin.ModelAdmin):
-    list_display = ["title", "publisher", "language", "price_amount", "price_currency", "created_at"]
-    search_fields = ["title", "publisher", "language"]
-    list_filter = ["language", "publisher"]
+    list_display = ["title", "publisher", "language", "price_amount", "price_currency", "owner", "created_at"]
+    search_fields = ["title", "publisher", "language", "owner__username"]
+    list_filter = ["language", "publisher", "owner"]
 
 
 @admin.register(Lesson)
 class LessonAdmin(admin.ModelAdmin):
-    list_display = ["title", "course", "position", "duration_seconds", "created_at"]
+    list_display = ["title", "course", "position", "duration_seconds", "has_uploaded_media", "created_at"]
     list_filter = ["course"]
     search_fields = ["title", "course__title"]
+
+    @admin.display(boolean=True, description="Uploaded file")
+    def has_uploaded_media(self, obj):
+        return bool(obj.video_file)
 
 
 @admin.register(LessonProgress)

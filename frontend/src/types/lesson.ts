@@ -8,7 +8,8 @@ export type Lesson = {
   course: number;
   title: string;
   description: string;
-  video_url: string;
+  video_url?: string | null;
+  stream_url?: string | null;
   duration_seconds: number;
   position: number;
   created_at: string;

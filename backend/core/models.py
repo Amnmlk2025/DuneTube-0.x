@@ -26,6 +26,13 @@ class RoleAssignment(models.Model):
 
 
 class Course(models.Model):
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="owned_courses",
+        blank=True,
+        null=True,
+    )
     title = models.CharField(max_length=255)
     description = models.TextField()
     price_amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -52,7 +59,8 @@ class Lesson(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="lessons")
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    video_url = models.URLField()
+    video_url = models.URLField(blank=True)
+    video_file = models.FileField(upload_to="lessons/videos/", blank=True, null=True)
     duration_seconds = models.PositiveIntegerField(default=0)
     position = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -63,6 +71,12 @@ class Lesson(models.Model):
 
     def __str__(self) -> str:
         return f"{self.course.title} :: {self.title}"
+
+    @property
+    def stream_url(self) -> str | None:
+        if self.video_file:
+            return self.video_file.url
+        return self.video_url
 
 
 class LessonProgress(models.Model):

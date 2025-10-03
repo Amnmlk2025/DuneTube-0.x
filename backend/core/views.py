@@ -1,6 +1,6 @@
 from django.db import transaction
 from django.db.models import Prefetch
-from rest_framework import filters, permissions, status, viewsets
+from rest_framework import filters, permissions, status, viewsets, parsers
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -12,11 +12,13 @@ from .serializers import (
     LessonNoteSerializer,
     LessonProgressSerializer,
     LessonSerializer,
+    StudioCourseSerializer,
+    StudioLessonSerializer,
 )
 
 
 class CourseViewSet(viewsets.ModelViewSet):
-    queryset = Course.objects.all().order_by("title")
+    queryset = Course.objects.all().select_related("owner").order_by("title")
     serializer_class = CourseSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
@@ -79,6 +81,18 @@ class ActivateRoleView(APIView):
         profile.active_role = requested_role
         profile.save(update_fields=["active_role", "updated_at"])
         return Response({"active_role": profile.active_role})
+
+
+class IsCreatorOrAdmin(permissions.BasePermission):
+    message = "Creator or admin role is required."
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        if user.is_superuser:
+            return True
+        return RoleAssignment.objects.filter(user=user, role__in=["creator", "admin"]).exists()
 
 
 class LessonViewSet(viewsets.ReadOnlyModelViewSet):
@@ -197,3 +211,76 @@ class LessonNoteViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         serializer.save(user=self.request.user, lesson=serializer.instance.lesson)
+
+
+class StudioCourseViewSet(viewsets.ModelViewSet):
+    serializer_class = StudioCourseSerializer
+    permission_classes = [permissions.IsAuthenticated, IsCreatorOrAdmin]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["title", "description", "language", "publisher"]
+    ordering_fields = ["updated_at", "created_at", "title"]
+    http_method_names = ["get", "post", "patch", "put", "delete"]
+
+    def get_queryset(self):
+        return (
+            Course.objects.select_related("owner")
+            .filter(owner=self.request.user)
+            .order_by("-updated_at")
+        )
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save(owner=self.request.user)
+
+
+class StudioLessonViewSet(viewsets.ModelViewSet):
+    serializer_class = StudioLessonSerializer
+    permission_classes = [permissions.IsAuthenticated, IsCreatorOrAdmin]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["title", "description"]
+    ordering_fields = ["position", "updated_at", "created_at"]
+    parser_classes = [parsers.JSONParser, parsers.FormParser, parsers.MultiPartParser]
+    http_method_names = ["get", "post", "patch", "put", "delete"]
+
+    def get_queryset(self):
+        queryset = (
+            Lesson.objects.select_related("course", "course__owner")
+            .filter(course__owner=self.request.user)
+            .order_by("position", "id")
+        )
+        course_id = self.request.query_params.get("course")
+        if course_id:
+            queryset = queryset.filter(course_id=course_id)
+        return queryset
+
+    def perform_create(self, serializer):
+        course = serializer.validated_data.get("course")
+        if not course or course.owner_id != self.request.user.id:
+            raise ValidationError({"course": ["You can only manage your own courses."]})
+        serializer.save()
+
+    def perform_update(self, serializer):
+        course = serializer.validated_data.get("course") or serializer.instance.course
+        if course.owner_id != self.request.user.id:
+            raise ValidationError({"course": ["You can only manage your own courses."]})
+        serializer.save(course=course)
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="upload",
+        permission_classes=[permissions.IsAuthenticated, IsCreatorOrAdmin],
+        parser_classes=[parsers.FormParser, parsers.MultiPartParser],
+    )
+    def upload(self, request, pk=None):
+        lesson = self.get_object()
+        file_obj = request.data.get("file") or request.FILES.get("file")
+        if not file_obj:
+            return Response({"detail": "file is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        lesson.video_file = file_obj
+        lesson.save(update_fields=["video_file", "updated_at"])
+        serializer = self.get_serializer(lesson)
+        return Response(serializer.data)

@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
@@ -11,12 +13,16 @@ from core.views import (
     HealthCheckView,
     LessonNoteViewSet,
     LessonViewSet,
+    StudioCourseViewSet,
+    StudioLessonViewSet,
 )
 
 router = DefaultRouter()
 router.register(r"courses", CourseViewSet, basename="course")
 router.register(r"lessons", LessonViewSet, basename="lesson")
 router.register(r"notes", LessonNoteViewSet, basename="lesson-note")
+router.register(r"studio/courses", StudioCourseViewSet, basename="studio-course")
+router.register(r"studio/lessons", StudioLessonViewSet, basename="studio-lesson")
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -30,3 +36,6 @@ urlpatterns = [
     path("api/", include(router.urls)),
     path("healthz", HealthCheckView.as_view(), name="healthz"),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

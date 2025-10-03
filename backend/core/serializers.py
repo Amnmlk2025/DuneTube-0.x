@@ -38,6 +38,7 @@ class LessonProgressSerializer(serializers.ModelSerializer):
 
 class LessonSerializer(serializers.ModelSerializer):
     progress = serializers.SerializerMethodField()
+    stream_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Lesson
@@ -47,6 +48,7 @@ class LessonSerializer(serializers.ModelSerializer):
             "title",
             "description",
             "video_url",
+            "stream_url",
             "duration_seconds",
             "position",
             "created_at",
@@ -58,6 +60,7 @@ class LessonSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "progress",
+            "stream_url",
         ]
 
     def get_progress(self, obj: Lesson) -> dict:
@@ -75,6 +78,15 @@ class LessonSerializer(serializers.ModelSerializer):
             return LessonProgressSerializer(progress).data
 
         return {"last_position": 0, "updated_at": None}
+
+    def get_stream_url(self, obj: Lesson) -> str | None:
+        stream = obj.stream_url
+        if not stream:
+            return None
+        request = self.context.get("request")
+        if request and obj.video_file:
+            return request.build_absolute_uri(stream)
+        return stream
 
 
 class LessonNoteSerializer(serializers.ModelSerializer):
@@ -108,3 +120,54 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = ["user", "active_role", "created_at", "updated_at"]
         read_only_fields = ["user", "created_at", "updated_at"]
+
+
+class StudioCourseSerializer(serializers.ModelSerializer):
+    owner = serializers.CharField(source="owner.username", read_only=True)
+
+    class Meta:
+        model = Course
+        fields = [
+            "id",
+            "title",
+            "description",
+            "price_amount",
+            "price_currency",
+            "language",
+            "tags",
+            "thumbnail_url",
+            "publisher",
+            "owner",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "owner", "created_at", "updated_at"]
+
+
+class StudioLessonSerializer(serializers.ModelSerializer):
+    stream_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Lesson
+        fields = [
+            "id",
+            "course",
+            "title",
+            "description",
+            "video_url",
+            "stream_url",
+            "duration_seconds",
+            "position",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "stream_url", "created_at", "updated_at"]
+
+    def get_stream_url(self, obj: Lesson) -> str | None:
+        stream = obj.stream_url
+        if not stream:
+            return None
+        request = self.context.get("request")
+        if request and obj.video_file:
+            return request.build_absolute_uri(stream)
+        return stream

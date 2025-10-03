@@ -6,6 +6,7 @@ import LanguageSwitcher from "./components/LanguageSwitcher";
 import Catalog from "./pages/Catalog";
 import CourseDetail from "./pages/CourseDetail";
 import Home from "./pages/Home";
+import Studio from "./pages/Studio";
 
 const App = () => {
   const { t, i18n } = useTranslation();
@@ -44,6 +45,16 @@ const App = () => {
             >
               {t("nav.catalog")}
             </NavLink>
+            <NavLink
+              to="/studio"
+              className={({ isActive }) =>
+                `rounded-full px-4 py-2 transition ${
+                  isActive ? "bg-primary text-white" : "hover:bg-primary/10"
+                }`
+              }
+            >
+              {t("nav.studio")}
+            </NavLink>
           </nav>
           <LanguageSwitcher />
         </header>
@@ -54,6 +65,7 @@ const App = () => {
               <Route path="/" element={<Home />} />
               <Route path="/catalog" element={<Catalog />} />
               <Route path="/courses/:courseId" element={<CourseDetail />} />
+              <Route path="/studio" element={<Studio />} />
             </Routes>
           </Suspense>
         </main>

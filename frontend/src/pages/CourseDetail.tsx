@@ -67,6 +67,11 @@ const CourseDetail = () => {
     () => lessons.find((lesson) => lesson.id === activeLessonId) ?? null,
     [activeLessonId, lessons],
   );
+  const activeLessonSource = useMemo(
+    () => activeLesson?.stream_url ?? activeLesson?.video_url ?? "",
+    [activeLesson],
+  );
+  const hasLessonMedia = Boolean(activeLessonSource);
 
   const resetProgressTimer = () => {
     if (progressTimeout.current) {
@@ -315,7 +320,7 @@ const CourseDetail = () => {
       return;
     }
     const video = videoRef.current;
-    if (!video) {
+    if (!video || !hasLessonMedia || !video.currentSrc) {
       return;
     }
     const current = Math.floor(video.currentTime);
@@ -323,17 +328,17 @@ const CourseDetail = () => {
       return;
     }
     scheduleProgressPersist(current);
-  }, [isAuthenticated, scheduleProgressPersist]);
+  }, [isAuthenticated, scheduleProgressPersist, hasLessonMedia]);
 
   const handleVideoPause = useCallback(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !hasLessonMedia) {
       return;
     }
     void flushPendingProgress();
-  }, [flushPendingProgress, isAuthenticated]);
+  }, [flushPendingProgress, hasLessonMedia, isAuthenticated]);
 
   const handleVideoLoaded = useCallback(() => {
-    if (!videoRef.current || !activeLesson) {
+    if (!videoRef.current || !activeLesson || !hasLessonMedia) {
       return;
     }
     if (activeLesson.progress?.last_position) {
@@ -343,7 +348,7 @@ const CourseDetail = () => {
         console.warn("Unable to set playback position", error);
       }
     }
-  }, [activeLesson]);
+  }, [activeLesson, hasLessonMedia]);
 
   const handleTabChange = (tab: TabKey) => {
     setActiveTab(tab);
@@ -361,7 +366,7 @@ const CourseDetail = () => {
 
   const handleUseCurrentTimestamp = () => {
     const video = videoRef.current;
-    if (!video) {
+    if (!video || !hasLessonMedia) {
       return;
     }
     const seconds = Math.floor(video.currentTime);
@@ -554,6 +559,9 @@ const CourseDetail = () => {
                               <span className="text-xs text-slate-500">{formatDuration(lesson.duration_seconds)}</span>
                             </div>
                             <p className="mt-1 text-xs text-slate-500">{lesson.description}</p>
+                            {!lesson.stream_url && !lesson.video_url ? (
+                              <p className="mt-2 text-xs font-semibold text-amber-600">{t("course.player.uploadPending")}</p>
+                            ) : null}
                             {isAuthenticated ? (
                               <p className="mt-2 text-xs text-primary-dark">
                                 {progressSeconds > 0
@@ -577,13 +585,16 @@ const CourseDetail = () => {
                       ref={videoRef}
                       controls
                       className="aspect-video w-full rounded-xl bg-black"
-                      src={activeLesson.video_url}
+                      src={activeLessonSource}
                       onTimeUpdate={handleVideoTimeUpdate}
                       onPause={handleVideoPause}
                       onLoadedMetadata={handleVideoLoaded}
                     >
                       {t("course.player.noSupport")}
                     </video>
+                    {!hasLessonMedia ? (
+                      <p className="mt-3 text-xs text-amber-200">{t("course.player.noMedia")}</p>
+                    ) : null}
                     {!isAuthenticated ? (
                       <p className="mt-3 text-xs text-slate-200">{t("course.player.authHint")}</p>
                     ) : null}
@@ -654,7 +665,7 @@ const CourseDetail = () => {
                         type="button"
                         onClick={handleUseCurrentTimestamp}
                         className="mt-5 rounded-full border border-primary px-4 py-2 text-xs font-semibold text-primary transition hover:bg-primary hover:text-white"
-                        disabled={!videoRef.current}
+                        disabled={!videoRef.current || !hasLessonMedia}
                       >
                         {t("course.notes.useCurrentTime")}
                       </button>
