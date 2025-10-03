@@ -13,3 +13,9 @@ build/
 coverage/
 staticfiles/
 backend/db.sqlite3
+nul
+agents-mode.patch
+patches/
+frontend/test-smoke.js
+frontend/src/components/tests/
+frontend/src/context/tests/

@@ -6,3 +6,5 @@ python-dotenv==1.1.1
 django-filter==25.1
 djangorestframework-simplejwt==5.5.1
 psycopg2-binary==2.9.10
+python-dotenv>=1.0.0
+django-filter>=25.1
