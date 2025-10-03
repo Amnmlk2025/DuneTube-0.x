@@ -56,12 +56,26 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "api.wsgi.application"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+db_engine = os.environ.get("DJANGO_DB_ENGINE", "django.db.backends.sqlite3")
+
+if db_engine == "django.db.backends.sqlite3":
+    DATABASES = {
+        "default": {
+            "ENGINE": db_engine,
+            "NAME": os.environ.get("DJANGO_DB_NAME", str(BASE_DIR / "db.sqlite3")),
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": db_engine,
+            "NAME": os.environ.get("DJANGO_DB_NAME", "dunetube"),
+            "USER": os.environ.get("DJANGO_DB_USER", "postgres"),
+            "PASSWORD": os.environ.get("DJANGO_DB_PASSWORD", ""),
+            "HOST": os.environ.get("DJANGO_DB_HOST", "localhost"),
+            "PORT": os.environ.get("DJANGO_DB_PORT", "5432"),
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {
