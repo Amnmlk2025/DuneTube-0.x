@@ -1,5 +1,9 @@
+from datetime import timedelta
+from decimal import Decimal
+
 from django.db import transaction
 from django.db.models import Prefetch
+from django.utils import timezone
 from rest_framework import filters, permissions, status, viewsets, parsers
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -14,6 +18,8 @@ from .serializers import (
     LessonSerializer,
     StudioCourseSerializer,
     StudioLessonSerializer,
+    WalletInvoiceSerializer,
+    WalletTransactionSerializer,
 )
 
 
@@ -284,3 +290,122 @@ class StudioLessonViewSet(viewsets.ModelViewSet):
         lesson.save(update_fields=["video_file", "updated_at"])
         serializer = self.get_serializer(lesson)
         return Response(serializer.data)
+
+
+class WalletTransactionsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        now = timezone.now()
+        courses = list(Course.objects.order_by("-created_at")[:3])
+
+        def course_ref(index: int):
+            if len(courses) > index:
+                course = courses[index]
+                return course.id, course.title, course.price_amount, course.price_currency
+            return None, "", Decimal("0.00"), "USD"
+
+        transactions = []
+        course_id, course_title, amount, currency = course_ref(0)
+        if amount > 0:
+            transactions.append(
+                {
+                    "id": f"txn-{now:%Y%m%d}-001",
+                    "direction": "credit",
+                    "amount": amount,
+                    "currency": currency,
+                    "description": f"Sale • {course_title}" if course_title else "Course sale",
+                    "status": "settled",
+                    "occurred_at": now - timedelta(days=2, hours=4),
+                    "course_id": course_id,
+                    "course_title": course_title,
+                }
+            )
+
+        course_id, course_title, amount, currency = course_ref(1)
+        if amount > 0:
+            transactions.append(
+                {
+                    "id": f"txn-{now:%Y%m%d}-002",
+                    "direction": "credit",
+                    "amount": amount,
+                    "currency": currency,
+                    "description": f"Sale • {course_title}" if course_title else "Course sale",
+                    "status": "settled",
+                    "occurred_at": now - timedelta(days=5, hours=3),
+                    "course_id": course_id,
+                    "course_title": course_title,
+                }
+            )
+
+        transactions.append(
+            {
+                "id": f"txn-{now:%Y%m%d}-003",
+                "direction": "debit",
+                "amount": Decimal("75.00"),
+                "currency": "USD",
+                "description": "Creator payout",
+                "status": "processing",
+                "occurred_at": now - timedelta(days=1, hours=1),
+            }
+        )
+
+        transactions.append(
+            {
+                "id": f"txn-{now:%Y%m%d}-004",
+                "direction": "debit",
+                "amount": Decimal("15.00"),
+                "currency": "USD",
+                "description": "Platform fee",
+                "status": "settled",
+                "occurred_at": now - timedelta(days=12),
+            }
+        )
+
+        balance = Decimal("0.00")
+        for item in transactions:
+            if item["direction"] == "credit":
+                balance += item["amount"]
+            else:
+                balance -= item["amount"]
+
+        serializer = WalletTransactionSerializer(transactions, many=True)
+        return Response(
+            {
+                "balance": {
+                    "amount": balance,
+                    "currency": transactions[0]["currency"] if transactions else "USD",
+                },
+                "transactions": serializer.data,
+            }
+        )
+
+
+class WalletInvoicesView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        now = timezone.now()
+        invoices = [
+            {
+                "id": f"inv-{now:%Y%m}-001",
+                "amount": Decimal("19.00"),
+                "currency": "USD",
+                "status": "paid",
+                "issued_at": now - timedelta(days=34),
+                "due_at": now - timedelta(days=27),
+                "reference": "Creator workspace subscription · Last month",
+            },
+            {
+                "id": f"inv-{now:%Y%m}-002",
+                "amount": Decimal("19.00"),
+                "currency": "USD",
+                "status": "open",
+                "issued_at": now - timedelta(days=4),
+                "due_at": now + timedelta(days=3),
+                "reference": "Creator workspace subscription · This month",
+            },
+        ]
+
+        serializer = WalletInvoiceSerializer(invoices, many=True)
+        return Response({"invoices": serializer.data})

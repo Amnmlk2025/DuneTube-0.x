@@ -15,6 +15,8 @@ from core.views import (
     LessonViewSet,
     StudioCourseViewSet,
     StudioLessonViewSet,
+    WalletInvoicesView,
+    WalletTransactionsView,
 )
 
 router = DefaultRouter()
@@ -33,6 +35,8 @@ urlpatterns = [
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/auth/roles/", ActiveRoleView.as_view(), name="auth-roles"),
     path("api/auth/roles/activate", ActivateRoleView.as_view(), name="auth-roles-activate"),
+    path("api/wallet/transactions/", WalletTransactionsView.as_view(), name="wallet-transactions"),
+    path("api/wallet/invoices/", WalletInvoicesView.as_view(), name="wallet-invoices"),
     path("api/", include(router.urls)),
     path("healthz", HealthCheckView.as_view(), name="healthz"),
 ]

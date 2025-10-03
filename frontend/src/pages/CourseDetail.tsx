@@ -5,6 +5,8 @@ import { useTranslation } from "react-i18next";
 
 import type { Course } from "../types/course";
 import type { Lesson, LessonNote } from "../types/lesson";
+import { usePreferences } from "../context/PreferencesContext";
+import { formatCurrencyForDisplay } from "../utils/intl";
 
 const formatDuration = (seconds: number) => {
   if (!Number.isFinite(seconds)) {
@@ -33,7 +35,8 @@ const INITIAL_NOTE_STATE: NoteFormState = {
 };
 
 const CourseDetail = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { currency } = usePreferences();
   const navigate = useNavigate();
   const { courseId } = useParams<{ courseId: string }>();
 
@@ -465,6 +468,13 @@ const CourseDetail = () => {
     );
   }
 
+  const coursePriceDisplay = formatCurrencyForDisplay(
+    course.price_amount,
+    course.price_currency,
+    currency,
+    i18n.language,
+  );
+
   return (
     <div className="mx-auto max-w-5xl space-y-10 pb-16">
       <header className="rounded-3xl bg-white/90 p-8 shadow-xl ring-1 ring-slate-100">
@@ -473,10 +483,7 @@ const CourseDetail = () => {
             <p className="text-sm uppercase tracking-[0.2em] text-primary">{course.publisher}</p>
             <h1 className="mt-2 text-3xl font-bold text-slate-900">{course.title}</h1>
             <p className="mt-3 text-sm text-slate-600">
-              {t("course.meta.language", { language: course.language.toUpperCase() })} · {t("course.meta.price", {
-                price: course.price_amount,
-                currency: course.price_currency,
-              })}
+              {t("course.meta.language", { language: course.language.toUpperCase() })} · {coursePriceDisplay}
             </p>
           </div>
           {course.thumbnail_url ? (

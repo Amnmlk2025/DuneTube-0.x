@@ -17,6 +17,7 @@ const resources = {
         home: "Home",
         catalog: "Catalog",
         studio: "Studio",
+        wallet: "Wallet",
       },
       hero: {
         title: "Share the knowledge of the Dune universe",
@@ -94,6 +95,47 @@ const resources = {
           notesDelete: "Unable to delete the note.",
         },
       },
+      preferences: {
+        currency: "Currency",
+        dateStyle: "Date style",
+        dateStyles: {
+          short: "Short",
+          medium: "Medium",
+          long: "Long",
+        },
+      },
+      wallet: {
+        title: "Wallet overview",
+        subtitle: "Track payouts, course sales, and platform invoices.",
+        authRequired: "Sign in as a creator to view your wallet.",
+        loading: "Loading wallet...",
+        balance: {
+          heading: "Current balance",
+          empty: "0.00",
+          currencyNotice: "Displayed in {{currency}}",
+        },
+        transactions: {
+          heading: "Recent transactions",
+          empty: "No transactions recorded yet.",
+        },
+        invoices: {
+          heading: "Invoices",
+          empty: "No invoices available.",
+          issued: "Issued {{date}}",
+          due: "Due {{date}}",
+        },
+        status: {
+          settled: "Settled",
+          processing: "Processing",
+          paid: "Paid",
+          open: "Open",
+          overdue: "Overdue",
+        },
+        errors: {
+          loadTransactions: "Unable to load transactions.",
+          loadInvoices: "Unable to load invoices.",
+        },
+      },
       studio: {
         title: "Teacher Studio",
         subtitle: "Manage your catalog and lesson media.",
@@ -160,6 +202,7 @@ const resources = {
         home: "خانه",
         catalog: "کتابخانه دوره‌ها",
         studio: "استودیو",
+        wallet: "کیف پول",
       },
       hero: {
         title: "دانش جهان تپه را به اشتراک بگذارید",
@@ -237,6 +280,47 @@ const resources = {
           notesDelete: "حذف یادداشت انجام نشد.",
         },
       },
+      preferences: {
+        currency: "ارز",
+        dateStyle: "سبک تاریخ",
+        dateStyles: {
+          short: "کوتاه",
+          medium: "متوسط",
+          long: "طولانی",
+        },
+      },
+      wallet: {
+        title: "نمای کلی کیف پول",
+        subtitle: "پرداخت‌ها، فروش دوره و صورت‌حساب‌ها را دنبال کنید.",
+        authRequired: "برای مشاهده کیف پول باید با نقش تولیدکننده وارد شوید.",
+        loading: "در حال بارگذاری کیف پول...",
+        balance: {
+          heading: "موجودی فعلی",
+          empty: "0.00",
+          currencyNotice: "نمایش بر اساس {{currency}}",
+        },
+        transactions: {
+          heading: "تراکنش‌های اخیر",
+          empty: "هنوز تراکنشی ثبت نشده است.",
+        },
+        invoices: {
+          heading: "صورت‌حساب‌ها",
+          empty: "صورت‌حسابی موجود نیست.",
+          issued: "صادر شده در {{date}}",
+          due: "سررسید {{date}}",
+        },
+        status: {
+          settled: "تسویه شده",
+          processing: "در حال پردازش",
+          paid: "پرداخت شده",
+          open: "باز",
+          overdue: "سررسید گذشته",
+        },
+        errors: {
+          loadTransactions: "بارگذاری تراکنش‌ها ممکن نشد.",
+          loadInvoices: "بارگذاری صورت‌حساب‌ها ممکن نشد.",
+        },
+      },
       studio: {
         title: "استودیوی مدرسان",
         subtitle: "دوره‌ها و محتوای درس‌های خود را مدیریت کنید.",
@@ -303,6 +387,7 @@ const resources = {
         home: "الرئيسية",
         catalog: "دليل الدورات",
         studio: "الاستوديو",
+        wallet: "المحفظة",
       },
       hero: {
         title: "انشر معرفة عالم الكثبان",
@@ -378,6 +463,47 @@ const resources = {
           notes: "تعذر تحميل الملاحظات. حاول مرة أخرى.",
           notesCreate: "تعذر حفظ الملاحظة. حاول مرة أخرى.",
           notesDelete: "تعذر حذف الملاحظة.",
+        },
+      },
+      preferences: {
+        currency: "العملة",
+        dateStyle: "تنسيق التاريخ",
+        dateStyles: {
+          short: "قصير",
+          medium: "متوسط",
+          long: "طويل",
+        },
+      },
+      wallet: {
+        title: "نظرة عامة على المحفظة",
+        subtitle: "تتبّع المدفوعات ومبيعات الدورات والفواتير.",
+        authRequired: "يلزم تسجيل الدخول بصلاحية منشئ لعرض المحفظة.",
+        loading: "جاري تحميل بيانات المحفظة...",
+        balance: {
+          heading: "الرصيد الحالي",
+          empty: "0.00",
+          currencyNotice: "معروض بعملة {{currency}}",
+        },
+        transactions: {
+          heading: "آخر المعاملات",
+          empty: "لا توجد معاملات حتى الآن.",
+        },
+        invoices: {
+          heading: "الفواتير",
+          empty: "لا توجد فواتير متاحة.",
+          issued: "صادرة في {{date}}",
+          due: "مستحقة في {{date}}",
+        },
+        status: {
+          settled: "مُسدَّد",
+          processing: "قيد المعالجة",
+          paid: "مدفوع",
+          open: "مفتوح",
+          overdue: "متأخر",
+        },
+        errors: {
+          loadTransactions: "تعذر تحميل المعاملات.",
+          loadInvoices: "تعذر تحميل الفواتير.",
         },
       },
       studio: {

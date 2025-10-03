@@ -171,3 +171,25 @@ class StudioLessonSerializer(serializers.ModelSerializer):
         if request and obj.video_file:
             return request.build_absolute_uri(stream)
         return stream
+
+
+class WalletTransactionSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    direction = serializers.ChoiceField(choices=["credit", "debit"])
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    currency = serializers.CharField()
+    description = serializers.CharField()
+    status = serializers.CharField()
+    occurred_at = serializers.DateTimeField()
+    course_id = serializers.IntegerField(required=False, allow_null=True)
+    course_title = serializers.CharField(required=False, allow_blank=True)
+
+
+class WalletInvoiceSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    currency = serializers.CharField()
+    status = serializers.CharField()
+    issued_at = serializers.DateTimeField()
+    due_at = serializers.DateTimeField()
+    reference = serializers.CharField()

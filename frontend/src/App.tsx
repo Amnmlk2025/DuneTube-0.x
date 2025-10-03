@@ -3,13 +3,22 @@ import { NavLink, Route, Routes } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import LanguageSwitcher from "./components/LanguageSwitcher";
+import { PreferencesProvider, usePreferences } from "./context/PreferencesContext";
 import Catalog from "./pages/Catalog";
 import CourseDetail from "./pages/CourseDetail";
 import Home from "./pages/Home";
 import Studio from "./pages/Studio";
+import Wallet from "./pages/Wallet";
 
 const App = () => {
   const { t, i18n } = useTranslation();
+  const { currency, dateStyle, setCurrency, setDateStyle } = usePreferences();
+  const currencyOptions = ["USD", "EUR", "IRR", "AED"];
+  const dateOptions: { value: "short" | "medium" | "long"; label: string }[] = [
+    { value: "short", label: t("preferences.dateStyles.short") },
+    { value: "medium", label: t("preferences.dateStyles.medium") },
+    { value: "long", label: t("preferences.dateStyles.long") },
+  ];
 
   useEffect(() => {
     document.documentElement.dir = i18n.dir(i18n.language);
@@ -55,8 +64,54 @@ const App = () => {
             >
               {t("nav.studio")}
             </NavLink>
+            <NavLink
+              to="/wallet"
+              className={({ isActive }) =>
+                `rounded-full px-4 py-2 transition ${
+                  isActive ? "bg-primary text-white" : "hover:bg-primary/10"
+                }`
+              }
+            >
+              {t("nav.wallet")}
+            </NavLink>
           </nav>
-          <LanguageSwitcher />
+          <div className="flex flex-wrap items-center gap-3 text-xs">
+            <div className="flex flex-col text-slate-600">
+              <label htmlFor="currency-select" className="text-[10px] font-semibold uppercase tracking-wide text-primary">
+                {t("preferences.currency")}
+              </label>
+              <select
+                id="currency-select"
+                value={currency}
+                onChange={(event) => setCurrency(event.target.value)}
+                className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              >
+                {currencyOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col text-slate-600">
+              <label htmlFor="date-style-select" className="text-[10px] font-semibold uppercase tracking-wide text-primary">
+                {t("preferences.dateStyle")}
+              </label>
+              <select
+                id="date-style-select"
+                value={dateStyle}
+                onChange={(event) => setDateStyle(event.target.value as typeof dateStyle)}
+                className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              >
+                {dateOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <LanguageSwitcher />
+          </div>
         </header>
 
         <main className="flex-1">
@@ -66,6 +121,7 @@ const App = () => {
               <Route path="/catalog" element={<Catalog />} />
               <Route path="/courses/:courseId" element={<CourseDetail />} />
               <Route path="/studio" element={<Studio />} />
+              <Route path="/wallet" element={<Wallet />} />
             </Routes>
           </Suspense>
         </main>
@@ -78,4 +134,10 @@ const App = () => {
   );
 };
 
-export default App;
+const AppWithProviders = () => (
+  <PreferencesProvider>
+    <App />
+  </PreferencesProvider>
+);
+
+export default AppWithProviders;

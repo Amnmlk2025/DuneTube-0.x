@@ -1,14 +1,18 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
+import { usePreferences } from "../context/PreferencesContext";
 import type { Course } from "../types/course";
+import { formatCurrencyForDisplay } from "../utils/intl";
 
 type CourseCardProps = {
   course: Course;
 };
 
 const CourseCard = ({ course }: CourseCardProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { currency } = usePreferences();
+  const priceDisplay = formatCurrencyForDisplay(course.price_amount, course.price_currency, currency, i18n.language);
 
   return (
     <Link
@@ -26,7 +30,7 @@ const CourseCard = ({ course }: CourseCardProps) => {
       <div className="mt-4 space-y-2">
         <div className="flex flex-wrap gap-x-4 text-sm text-slate-600">
           <span>
-            <strong className="font-medium text-slate-800">{t("catalog.price")}:</strong> {course.price_amount} {course.price_currency}
+            <strong className="font-medium text-slate-800">{t("catalog.price")}:</strong> {priceDisplay}
           </span>
           <span>
             <strong className="font-medium text-slate-800">{t("catalog.language")}:</strong> {course.language.toUpperCase()}
