@@ -1,33 +1,41 @@
-name: Auto PR (work-phase2 -> main)
+name: Auto PR (feature -> main)
 on:
   push:
-    branches: [ work-phase2 ]
+    branches:
+      - work-phase2
+      - feat/*
+      - fix/*
   workflow_dispatch:
+
 permissions:
-  contents: read
+  contents: write         # احتیاطاً write
   pull-requests: write
+
 jobs:
   open-pr:
     runs-on: ubuntu-latest
     steps:
-      - name: Create or reuse PR
+      - name: Open or reuse PR to main
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const head = 'work-phase2';
+            const head = context.ref.replace('refs/heads/',''); // current branch
             const base = 'main';
-            const existing = await github.rest.pulls.list({
+
+            // try find existing PR
+            const { data: prs } = await github.rest.pulls.list({
               owner, repo, state: 'open', head: `${owner}:${head}`, base
             });
-            if (existing.data.length) {
-              core.notice(`PR already exists: ${existing.data[0].html_url}`);
+            if (prs.length) {
+              core.notice(`PR already exists: ${prs[0].html_url}`);
               return;
             }
-            const pr = await github.rest.pulls.create({
+            const { data: pr } = await github.rest.pulls.create({
               owner, repo, head, base,
-              title: 'feat(ci/smoke): stable frontend build + vitest setup',
-              body: 'Frontend build excludes tests via tsconfig.build.json; Vitest globals+jsdom configured; BE /healthz verified.'
+              title: `auto-pr: ${head} -> ${base}`,
+              body: 'Auto PR opened by workflow.'
             });
-            core.notice(`PR created: ${pr.data.html_url}`);
+            core.notice(`PR created: ${pr.html_url}`);
