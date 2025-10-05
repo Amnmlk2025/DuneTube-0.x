@@ -1,3 +1,121 @@
+from django.conf import settings
 from django.db import models
 
-# Create your models here.
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile")
+    active_role = models.CharField(max_length=32, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return f"Profile<{self.user.username}>"
+
+
+class RoleAssignment(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="role_assignments")
+    role = models.CharField(max_length=32)
+    assigned_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "role")
+        ordering = ["role"]
+
+    def __str__(self) -> str:
+        return f"{self.user.username}:{self.role}"
+
+
+class Course(models.Model):
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="owned_courses",
+        blank=True,
+        null=True,
+    )
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    price_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    price_currency = models.CharField(max_length=8)
+    language = models.CharField(max_length=8)
+    tags = models.JSONField(default=list, blank=True)
+    thumbnail_url = models.URLField(blank=True)
+    publisher = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["title"]
+
+    def __str__(self) -> str:
+        return f"{self.title} ({self.language})"
+
+    @property
+    def price_display(self) -> str:
+        return f"{self.price_amount} {self.price_currency}"
+
+
+class Lesson(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="lessons")
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    video_url = models.URLField(blank=True)
+    video_file = models.FileField(upload_to="lessons/videos/", blank=True, null=True)
+    duration_seconds = models.PositiveIntegerField(default=0)
+    position = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["position", "id"]
+
+    def __str__(self) -> str:
+        return f"{self.course.title} :: {self.title}"
+
+    @property
+    def stream_url(self) -> str | None:
+        if self.video_file:
+            return self.video_file.url
+        return self.video_url
+
+
+class LessonProgress(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="lesson_progress",
+    )
+    lesson = models.ForeignKey(
+        Lesson,
+        on_delete=models.CASCADE,
+        related_name="progress_entries",
+    )
+    last_position = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("user", "lesson")
+        ordering = ["-updated_at"]
+
+    def __str__(self) -> str:
+        return f"{self.user.username}:{self.lesson_id}@{self.last_position}s"
+
+
+class LessonNote(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="lesson_notes",
+    )
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="notes")
+    body = models.TextField()
+    timestamp = models.PositiveIntegerField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+
+    def __str__(self) -> str:
+        return f"Note<{self.user.username}:{self.lesson_id}>"

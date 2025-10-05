@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: dunetube
+      POSTGRES_USER: dunetube
+      POSTGRES_PASSWORD: dunetube
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  api:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    environment:
+      DJANGO_DB_ENGINE: django.db.backends.postgresql
+      DJANGO_DB_NAME: dunetube
+      DJANGO_DB_USER: dunetube
+      DJANGO_DB_PASSWORD: dunetube
+      DJANGO_DB_HOST: db
+      DJANGO_DB_PORT: 5432
+      DJANGO_DEBUG: "1"
+    depends_on:
+      - db
+    ports:
+      - "8000:8000"
+    command: >-
+      sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ../backend:/app
+
+  web:
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile
+    depends_on:
+      - api
+    ports:
+      - "4173:80"
+
+volumes:
+  db-data:

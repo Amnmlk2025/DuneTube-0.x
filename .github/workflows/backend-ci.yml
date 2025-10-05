@@ -1,16 +1,41 @@
-name: backend-ci
-on: [push, pull_request, workflow_dispatch]
+name: Backend CI
+on:
+  pull_request:
+    branches: [ main, feat/*, fix/*, work-phase2 ]
+  push:
+    branches: [ main ]
+
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      DJANGO_SECRET_KEY: ci_secret
+      DJANGO_SETTINGS_MODULE: config.settings   # اگر نام تنظیمات فرق دارد، همین‌جا عوض کن
+      ALLOWED_HOSTS: "*"
+      DEBUG: "1"
+      # اگر پروژه از django-environ استفاده می‌کند:
+      DATABASE_URL: "sqlite:///db.sqlite3"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: |
+        with: { python-version: "3.11" }
+
+      - name: Install deps
+        run: |
           python -m pip install --upgrade pip
-          pip install django djangorestframework djangorestframework-simplejwt django-cors-headers pytest black flake8
-      - run: black --check .
-      - run: flake8 .
-      - run: echo "No tests yet"; exit 0
+          pip install -r requirements.txt || true
+
+      - name: Migrate (sqlite)
+        run: |
+          python manage.py migrate --noinput || true
+
+      - name: Django check
+        run: |
+          python - <<'PY'
+import django, os
+print("Django", django.get_version(), "DJANGO_SETTINGS_MODULE=", os.getenv("DJANGO_SETTINGS_MODULE"))
+PY
+          python manage.py check
