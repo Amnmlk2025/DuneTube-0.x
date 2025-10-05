@@ -1,0 +1,30 @@
+name: backend-ci
+on:
+  push:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install django djangorestframework djangorestframework-simplejwt django-cors-headers pytest black flake8
+      - name: Lint
+        run: |
+          black --check .
+          flake8 .
+      - name: Tests (placeholder)
+        run: |
+          echo "No tests yet"; exit 0
