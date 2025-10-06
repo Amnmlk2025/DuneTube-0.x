@@ -1,27 +1,63 @@
-name: MyBoT Integration / یکپارچه‌سازی MyBoT
+name: MyBoT Integration
 
 on:
-  workflow_dispatch:
   push:
-    branches: [ main ]
-  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
 
 jobs:
   run-mybot:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Run MyBoT Script / اجرای اسکریپت MyBoT
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: List repo & show manifest path
+        run: |
+          echo "Repo tree (top-level):" >> "$GITHUB_STEP_SUMMARY"
+          ls -la | sed 's/^/    /' >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "MyBoT manifest:" >> "$GITHUB_STEP_SUMMARY"
+          ls -la MyBoT || true
+          echo '```yaml' >> "$GITHUB_STEP_SUMMARY"
+          cat MyBoT/manifest.yaml >> "$GITHUB_STEP_SUMMARY" || echo "manifest.yaml not found" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Prepare tools
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y jq
+
+      - name: Analyze & summarize key files with OpenAI
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm install openai
-          node .github/mybot.js
+          set -e
+          FILES="$(git ls-files | head -n 50)"
+          echo "## MyBoT Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          summarize () {
+            local path="$1"
+            CONTENT="$(head -c 5000 "$path" | sed 's/`/\\`/g')"
+            PROMPT=$(jq -n --arg f "$path" --arg c "$CONTENT" \
+              '{model:"gpt-4o-mini", messages:[{role:"system",content:"You are a repo analysis assistant."},
+                                                {role:"user",content:("Summarize this file and suggest improvements (max 8 bullets). File: "+$f+"\n---\n"+$c)}], max_tokens: 400}')
+            RESP=$(curl -sS https://api.openai.com/v1/chat/completions \
+                    -H "Authorization: Bearer '"$OPENAI_API_KEY"'" \
+                    -H "Content-Type: application/json" \
+                    -d "$PROMPT")
+            TEXT=$(echo "$RESP" | jq -r '.choices[0].message.content // "No response"')
+            echo "### $path" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "$TEXT" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+          }
+
+          for f in README.md MyBoT/README.md MyBoT/instructions.md; do
+            [ -f "$f" ] && summarize "$f" || true
+          done
