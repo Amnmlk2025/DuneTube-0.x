@@ -47,6 +47,8 @@ jobs:
           if [ -f requirements-dev.txt ]; then
             pip install -r requirements-dev.txt
           fi
+          # Optional: Django test deps
+          pip install pytest pytest-django || true
 
       - name: Run database migrations
         run: |

@@ -35,28 +35,41 @@ jobs:
           cat MyBoT/manifest.yaml >> "$GITHUB_STEP_SUMMARY" || echo "manifest.yaml not found" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Sanity check OpenAI key
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          set -e
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" https://api.openai.com/v1/models \
+                   -H "Authorization: Bearer $OPENAI_API_KEY")
+          echo "HTTP status from /v1/models = $CODE"
+          test "$CODE" = "200"
+
       - name: Build file list
         id: files
         shell: bash
         run: |
           set -e
-          # اگر PR است، فقط فایل‌های تغییرکرده را بگیر
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            git fetch origin ${{ github.base_ref }} --depth=1
-            DIFF=$(git diff --name-only --diff-filter=AM origin/${{ github.base_ref }}...HEAD)
-          else
-            # در push/دستی: مجموعه‌ای معقول از فایل‌های مرتبط
-            DIFF=$(git ls-files | grep -E '\.(md|py|js|ts|tsx|json|yml|yaml)$' | head -n 60)
-          fi
+          case "${{ github.event_name }}" in
+            pull_request)
+              echo "📂 Pull Request detected → comparing with base branch"
+              git fetch origin ${{ github.base_ref }} --depth=1
+              DIFF=$(git diff --name-only --diff-filter=AM origin/${{ github.base_ref }}...HEAD || true)
+              ;;
+            push)
+              echo "📂 Push detected → comparing last two commits"
+              DIFF=$(git diff --name-only --diff-filter=AM HEAD~1 HEAD || true)
+              ;;
+            *)
+              echo "📂 Manual run → analyzing common source files"
+              DIFF=$(git ls-files | grep -E '\.(md|py|js|ts|tsx|json|yml|yaml)$' | head -n 60 || true)
+              ;;
+          esac
 
-          # حذف مسیرهای غیرضروری
           FILES=$(echo "$DIFF" | grep -Ev '(^$|^node_modules/|^dist/|^build/|^.git/|^.github/)' || true)
-
-          echo "These files will be analyzed:"
+          echo "Files selected for analysis:"
           echo "$FILES"
           echo "$FILES" > files.txt
-
-          # خروجی برای steps بعدی
           echo "count=$(wc -l < files.txt | tr -d ' ')" >> $GITHUB_OUTPUT
 
       - name: Analyze with OpenAI
@@ -74,7 +87,6 @@ jobs:
             local chunk="$2"
             local tries=0
             local maxtries=3
-            local delay=2
             local payload
             payload=$(jq -n --arg f "$path" --arg c "$chunk" \
               '{model:"gpt-4o-mini",
@@ -97,11 +109,11 @@ jobs:
               tries=$((tries+1))
               if [ "$tries" -ge "$maxtries" ]; then
                 echo "⚠️ No AI response after $maxtries tries."
-                echo "Raw error:" 
+                echo "Raw error:"
                 echo "$resp" | jq -r '.error.message // . | tostring' 2>/dev/null || echo "$resp"
                 return 0
               fi
-              sleep "$delay"
+              sleep 2
             done
           }
 
@@ -110,7 +122,6 @@ jobs:
             echo "### $path" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
 
-            # اگر فایل خیلی بزرگ بود، به تکه‌های ~6000 کاراکتری بشکن
             local content
             content="$(sed 's/`/\\`/g' "$path" | head -c 48000)"
             if [ -z "$content" ]; then
@@ -119,22 +130,17 @@ jobs:
               return
             fi
 
-            # chunking
             echo "$content" | awk -v size=6000 '{
               s=$0
-              while (length(s) > 0) {
-                print substr(s,1,size)
-                s=substr(s,size+1)
-              }
+              while (length(s) > 0) { print substr(s,1,size); s=substr(s,size+1) }
             }' > chunks.tmp
 
-            chunk_idx=0
+            local chunk_idx=0
             while IFS= read -r chunk; do
               chunk_idx=$((chunk_idx+1))
               echo "**Part $chunk_idx**" >> "$GITHUB_STEP_SUMMARY"
               summarize_chunk "$path" "$chunk" >> "$GITHUB_STEP_SUMMARY"
               echo "" >> "$GITHUB_STEP_SUMMARY"
-              # حداکثر 3 تکه برای هر فایل
               if [ "$chunk_idx" -ge 3 ]; then
                 echo "_(truncated after 3 parts)_" >> "$GITHUB_STEP_SUMMARY"
                 break
@@ -166,8 +172,6 @@ jobs:
             const body = fs.readFileSync('pr-comment.md', 'utf8');
             const {owner, repo} = context.repo;
             const issue_number = context.payload.pull_request.number;
-
-            // سعی می‌کنیم اگر قبلاً کامنتی با این عنوان بوده، آپدیتش کنیم
             const header = "### 🤖 MyBoT AI Summary";
             const comments = await github.rest.issues.listComments({owner, repo, issue_number});
             const existing = comments.data.find(c => c.body && c.body.startsWith(header));
