@@ -82,24 +82,7 @@ jobs:
             local content
             content="$(sed 's/`/\\`/g' "$f" | head -c 48000)"
 
-            # Heredoc: متن دستورالعمل‌ها بدون درگیری با YAML
-            read -r -d '' POLICY <<'TXT'
-Repository policy:
-- Keep style and architecture consistent.
-- Small, safe changes per file; no sweeping rewrites.
-- Only modify the given file.
-- If no change is needed, do not output a patch.
-
-Task:
-1) Briefly summarize what this file does (<=5 bullets).
-2) Suggest concrete improvements (<=8 bullets).
-3) If improvements are small and safe, output a unified diff for this ONE file only, surrounded by:
-BEGIN_PATCH
-*** Start Patch
-<unified-diff-here>
-*** End Patch
-END_PATCH
-TXT
+            POLICY=$'Repository policy:\n- Keep style and architecture consistent.\n- Small, safe changes per file; no sweeping rewrites.\n- Only modify the given file.\n- If no change is needed, do not output a patch.\n\nTask:\n1) Briefly summarize what this file does (<=5 bullets).\n2) Suggest concrete improvements (<=8 bullets).\n3) If improvements are small and safe, output a unified diff for this ONE file only, surrounded by:\nBEGIN_PATCH\n*** Start Patch\n<unified-diff-here>\n*** End Patch\nEND_PATCH'
 
             jq -n --arg f "$f" --arg c "$content" --arg pol "$POLICY" \
             '{
@@ -122,13 +105,11 @@ TXT
                      -H "Authorization: Bearer $OPENAI_API_KEY" \
                      -H "Content-Type: application/json" \
                      -d "$PROMPT")
-
             TEXT=$(echo "$RESP" | jq -r '.choices[0].message.content // ""')
             if [ -z "$TEXT" ]; then
               echo "_No AI response._" >> summary.md
               continue
             fi
-
             echo "$TEXT" >> summary.md
             # Extract patch block safely
             echo "$TEXT" | awk '/BEGIN_PATCH/{flag=1;next}/END_PATCH/{flag=0}flag' \
@@ -168,10 +149,8 @@ TXT
           if ! git diff --cached --quiet; then
             git commit -m "chore(mybot): auto-fixes from MyBoT"
             git push
-            echo "applied=true" >> $GITHUB_OUTPUT
           else
             echo "No staged changes; nothing to commit."
-            echo "applied=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Comment on PR
