@@ -41,17 +41,12 @@ jobs:
       - name: Detect context & decide apply mode
         id: ctx
         run: |
-          # Detect if this PR comes from a fork
           IS_FORK="${{ github.event.pull_request.head.repo.fork && 'true' || 'false' }}"
           echo "is_fork=$IS_FORK" >> $GITHUB_OUTPUT
-
-          # Check label for apply permission
           LABELS="${{ join(github.event.pull_request.labels.*.name, ' ') }}"
           HAS_LABEL="false"
           echo "$LABELS" | grep -q "mybot:apply" && HAS_LABEL="true"
           echo "has_label=$HAS_LABEL" >> $GITHUB_OUTPUT
-
-          # Check workflow_dispatch input
           APPLY_INPUT="${{ inputs.apply }}"
           [ -z "$APPLY_INPUT" ] && APPLY_INPUT="false"
           echo "apply_input=$APPLY_INPUT" >> $GITHUB_OUTPUT
@@ -67,7 +62,6 @@ jobs:
           else
             DIFF=$(git ls-files | head -n 60)
           fi
-
           FILES=$(echo "$DIFF" | grep -E '\.(py|js|ts|tsx|md|json|yml|yaml|css|html)$' | \
                   grep -Ev '(^$|^node_modules/|^dist/|^build/|^.git/|^.github/)' | head -n 60 || true)
           echo "$FILES" > files.txt
@@ -87,32 +81,32 @@ jobs:
             local f="$1"
             local content
             content="$(sed 's/`/\\`/g' "$f" | head -c 48000)"
-            jq -n --arg f "$f" --arg c "$content" \
-            '{
-              model:"gpt-4o-mini",
-              messages:[
-                {role:"system","content":"You are a meticulous senior software engineer. Output only clear analysis and, when edits are needed, a unified diff patch between BEGIN_PATCH and END_PATCH. Never include explanations inside the patch."},
-                {role:"user","content":
-"Repository policy:
+
+            # Heredoc: متن دستورالعمل‌ها بدون درگیری با YAML
+            read -r -d '' POLICY <<'TXT'
+Repository policy:
 - Keep style and architecture consistent.
 - Small, safe changes per file; no sweeping rewrites.
 - Only modify the given file.
 - If no change is needed, do not output a patch.
 
 Task:
-1) Briefly summarize what this file does (≤5 bullets).
-2) Suggest concrete improvements (≤8 bullets).
+1) Briefly summarize what this file does (<=5 bullets).
+2) Suggest concrete improvements (<=8 bullets).
 3) If improvements are small and safe, output a unified diff for this ONE file only, surrounded by:
 BEGIN_PATCH
 *** Start Patch
 <unified-diff-here>
 *** End Patch
 END_PATCH
+TXT
 
-File path: \($f)
------ FILE CONTENT (truncated) -----
-\($c)
-"}
+            jq -n --arg f "$f" --arg c "$content" --arg pol "$POLICY" \
+            '{
+              model:"gpt-4o-mini",
+              messages:[
+                {role:"system","content":"You are a meticulous senior software engineer. Output only clear analysis and, when edits are needed, a unified diff patch between BEGIN_PATCH and END_PATCH. Never include explanations inside the patch."},
+                {role:"user","content": ($pol + "\n\nFile path: " + $f + "\n----- FILE CONTENT (truncated) -----\n" + $c)}
               ],
               temperature: 0.2,
               max_tokens: 800
@@ -162,11 +156,9 @@ File path: \($f)
           cat patches.diff || true
           echo "--------------------------------"
 
-          # Try to apply; if fails, abort gracefully
           git config user.name "MyBoT"
           git config user.email "bot@dunetube.local"
 
-          # Ensure diff headers exist; if not, try to auto-add
           if ! grep -q '^--- ' patches.diff; then
             echo "⚠️ Patch seems incomplete; skipping apply."
             exit 0
@@ -191,18 +183,17 @@ File path: \($f)
             const fs = require('fs');
             const bodyHeader = "### 🤖 MyBoT AI Summary";
             const summary = fs.readFileSync('summary.md','utf8');
-            const applied = core.getInput('applied') || '';
-            const body = `${bodyHeader}
-
-${summary}
-
-_${{ steps.ctx.outputs.has_label == 'true' ? 'Label `mybot:apply` present' : 'Label `mybot:apply` missing' }}_
-${{ steps.ctx.outputs.is_fork == 'true' ? '**Fork PR:** cannot apply patches automatically.' : '' }}
-`;
             const {owner, repo} = context.repo;
             const issue_number = context.payload.pull_request.number;
             const comments = await github.rest.issues.listComments({owner, repo, issue_number});
             const existing = comments.data.find(c => c.body && c.body.startsWith(bodyHeader));
+            const body = `${bodyHeader}
+
+${summary}
+
+${{ steps.ctx.outputs.has_label == 'true' ? 'Label `mybot:apply` present' : 'Label `mybot:apply` missing' }}
+${{ steps.ctx.outputs.is_fork == 'true' ? '**Fork PR:** cannot apply patches automatically.' : '' }}
+`;
             if (existing) {
               await github.rest.issues.updateComment({owner, repo, comment_id: existing.id, body});
             } else {
