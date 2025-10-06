@@ -42,14 +42,14 @@ jobs:
         id: ctx
         run: |
           IS_FORK="${{ github.event.pull_request.head.repo.fork && 'true' || 'false' }}"
-          echo "is_fork=$IS_FORK" >> $GITHUB_OUTPUT
+          echo "is_fork=$IS_FORK" >> "$GITHUB_OUTPUT"
           LABELS="${{ join(github.event.pull_request.labels.*.name, ' ') }}"
           HAS_LABEL="false"
           echo "$LABELS" | grep -q "mybot:apply" && HAS_LABEL="true"
-          echo "has_label=$HAS_LABEL" >> $GITHUB_OUTPUT
+          echo "has_label=$HAS_LABEL" >> "$GITHUB_OUTPUT"
           APPLY_INPUT="${{ inputs.apply }}"
           [ -z "$APPLY_INPUT" ] && APPLY_INPUT="false"
-          echo "apply_input=$APPLY_INPUT" >> $GITHUB_OUTPUT
+          echo "apply_input=$APPLY_INPUT" >> "$GITHUB_OUTPUT"
 
       - name: Build changed file list
         id: files
@@ -65,23 +65,25 @@ jobs:
           FILES=$(echo "$DIFF" | grep -E '\.(py|js|ts|tsx|md|json|yml|yaml|css|html)$' | \
                   grep -Ev '(^$|^node_modules/|^dist/|^build/|^.git/|^.github/)' | head -n 60 || true)
           echo "$FILES" > files.txt
-          echo "count=$(wc -l < files.txt | tr -d ' ')" >> $GITHUB_OUTPUT
+          echo "count=$(wc -l < files.txt | tr -d ' ')" >> "$GITHUB_OUTPUT"
 
       - name: Analyze & propose patches
-        if: steps.files.outputs.count != '0'
+        if: ${{ steps.files.outputs.count != '0' }}
         id: propose
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           set -e
-          echo "## 🤖 MyBoT AI Summary" > summary.md
+          echo "## MyBoT AI Summary" > summary.md
           echo "" >> summary.md
 
           gen_prompt () {
             local f="$1"
             local content
             content="$(sed 's/`/\\`/g' "$f" | head -c 48000)"
+
             POLICY=$'Repository policy:\n- Keep style and architecture consistent.\n- Small, safe changes per file; no sweeping rewrites.\n- Only modify the given file.\n- If no change is needed, do not output a patch.\n\nTask:\n1) Briefly summarize what this file does (<=5 bullets).\n2) Suggest concrete improvements (<=8 bullets).\n3) If improvements are small and safe, output a unified diff for this ONE file only, surrounded by:\nBEGIN_PATCH\n*** Start Patch\n<unified-diff-here>\n*** End Patch\nEND_PATCH'
+
             jq -n --arg f "$f" --arg c "$content" --arg pol "$POLICY" \
             '{
               model:"gpt-4o-mini",
@@ -109,21 +111,20 @@ jobs:
               continue
             fi
             echo "$TEXT" >> summary.md
-            # Extract patch block safely
             echo "$TEXT" | awk '/BEGIN_PATCH/{flag=1;next}/END_PATCH/{flag=0}flag' \
               | sed '1,1d;$d' \
               | sed '1,/^\*\*\* Start Patch/d' >> patches.diff
           done < files.txt
 
-          echo "summary_path=summary.md" >> $GITHUB_OUTPUT
+          echo "summary_path=summary.md" >> "$GITHUB_OUTPUT"
 
       - name: Show Summary
-        if: steps.files.outputs.count != '0'
+        if: ${{ steps.files.outputs.count != '0' }}
         run: |
           cat summary.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Apply patches (only if allowed)
-        if: steps.files.outputs.count != '0' && steps.ctx.outputs.is_fork != 'true' && (steps.ctx.outputs.has_label == 'true' || steps.ctx.outputs.apply_input == 'true')
+        if: ${{ steps.files.outputs.count != '0' && steps.ctx.outputs.is_fork != 'true' && (steps.ctx.outputs.has_label == 'true' || steps.ctx.outputs.apply_input == 'true') }}
         run: |
           set -e
           if [ ! -s patches.diff ]; then
@@ -134,12 +135,15 @@ jobs:
           echo "--------------------------------"
           cat patches.diff || true
           echo "--------------------------------"
+
           git config user.name "MyBoT"
           git config user.email "bot@dunetube.local"
+
           if ! grep -q '^--- ' patches.diff; then
-            echo "⚠️ Patch seems incomplete; skipping apply."
+            echo "Patch seems incomplete; skipping apply."
             exit 0
           fi
+
           git apply --index --reject patches.diff || true
           if ! git diff --cached --quiet; then
             git commit -m "chore(mybot): auto-fixes from MyBoT"
@@ -149,37 +153,28 @@ jobs:
           fi
 
       - name: Comment on PR
-        if: github.event_name == 'pull_request' && steps.files.outputs.count != '0'
+        if: ${{ github.event_name == 'pull_request' && steps.files.outputs.count != '0' }}
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const bodyHeader = "### 🤖 MyBoT AI Summary";
-            const summary = fs.readFileSync('summary.md','utf8');
-
-            // Compute flags inside JS, not via ${{ ... }}
             const pr = context.payload.pull_request;
             const isFork = !!(pr && pr.head && pr.head.repo && pr.head.repo.fork);
             const labels = (pr && pr.labels ? pr.labels.map(l => l.name) : []);
             const hasLabel = labels.includes('mybot:apply');
 
-            const footer = [
-              hasLabel ? "Label `mybot:apply` present" : "Label `mybot:apply` missing",
-              isFork ? "**Fork PR:** cannot apply patches automatically." : ""
-            ].filter(Boolean).join("\n");
-
-            const body = `${bodyHeader}
-
-${summary}
-
-${footer}
-`;
+            const header = "### MyBoT AI Summary\n\n";
+            const summary = fs.readFileSync('summary.md','utf8');
+            const footerLines = [];
+            footerLines.push(hasLabel ? "Label `mybot:apply` present" : "Label `mybot:apply` missing");
+            if (isFork) footerLines.push("**Fork PR:** cannot apply patches automatically.");
+            const body = header + summary + "\n" + footerLines.join("\n") + "\n";
 
             const {owner, repo} = context.repo;
             const issue_number = pr.number;
             const comments = await github.rest.issues.listComments({owner, repo, issue_number});
-            const existing = comments.data.find(c => c.body && c.body.startsWith(bodyHeader));
+            const existing = comments.data.find(c => c.body && c.body.startsWith("### MyBoT AI Summary"));
             if (existing) {
               await github.rest.issues.updateComment({owner, repo, comment_id: existing.id, body});
             } else {
