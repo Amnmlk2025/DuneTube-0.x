@@ -1,41 +1,53 @@
 name: Backend CI
 on:
-  pull_request:
-    branches: [ main, feat/*, fix/*, work-phase2 ]
   push:
-    branches: [ main ]
-
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+      - "pyproject.toml"
+      - "requirements*.txt"
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+      - "pyproject.toml"
+      - "requirements*.txt"
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: backend
-    env:
-      DJANGO_SECRET_KEY: ci_secret
-      DJANGO_SETTINGS_MODULE: config.settings   # اگر نام تنظیمات فرق دارد، همین‌جا عوض کن
-      ALLOWED_HOSTS: "*"
-      DEBUG: "1"
-      # اگر پروژه از django-environ استفاده می‌کند:
-      DATABASE_URL: "sqlite:///db.sqlite3"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: { python-version: "3.11" }
-
+        with:
+          python-version: "3.12"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt || true
-
-      - name: Migrate (sqlite)
+          pip install -r requirements.txt
+      - name: Django checks
+        env:
+          DJANGO_SETTINGS_MODULE: backend.settings
+        run: python manage.py check
+      - name: Ruff
         run: |
-          python manage.py migrate --noinput || true
-
-      - name: Django check
+          pip install ruff
+          ruff backend --output-format=github
+      - name: mypy
         run: |
-          python - <<'PY'
-import django, os
-print("Django", django.get_version(), "DJANGO_SETTINGS_MODULE=", os.getenv("DJANGO_SETTINGS_MODULE"))
-PY
-          python manage.py check
+          pip install mypy django-stubs djangorestframework-stubs
+          mypy backend
+      - name: Pytest
+        env:
+          DJANGO_SETTINGS_MODULE: backend.settings
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          pip install pytest pytest-django
+          pytest -q
