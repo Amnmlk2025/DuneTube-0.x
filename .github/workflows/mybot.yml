@@ -81,9 +81,7 @@ jobs:
             local f="$1"
             local content
             content="$(sed 's/`/\\`/g' "$f" | head -c 48000)"
-
             POLICY=$'Repository policy:\n- Keep style and architecture consistent.\n- Small, safe changes per file; no sweeping rewrites.\n- Only modify the given file.\n- If no change is needed, do not output a patch.\n\nTask:\n1) Briefly summarize what this file does (<=5 bullets).\n2) Suggest concrete improvements (<=8 bullets).\n3) If improvements are small and safe, output a unified diff for this ONE file only, surrounded by:\nBEGIN_PATCH\n*** Start Patch\n<unified-diff-here>\n*** End Patch\nEND_PATCH'
-
             jq -n --arg f "$f" --arg c "$content" --arg pol "$POLICY" \
             '{
               model:"gpt-4o-mini",
@@ -136,15 +134,12 @@ jobs:
           echo "--------------------------------"
           cat patches.diff || true
           echo "--------------------------------"
-
           git config user.name "MyBoT"
           git config user.email "bot@dunetube.local"
-
           if ! grep -q '^--- ' patches.diff; then
             echo "⚠️ Patch seems incomplete; skipping apply."
             exit 0
           fi
-
           git apply --index --reject patches.diff || true
           if ! git diff --cached --quiet; then
             git commit -m "chore(mybot): auto-fixes from MyBoT"
@@ -162,17 +157,29 @@ jobs:
             const fs = require('fs');
             const bodyHeader = "### 🤖 MyBoT AI Summary";
             const summary = fs.readFileSync('summary.md','utf8');
-            const {owner, repo} = context.repo;
-            const issue_number = context.payload.pull_request.number;
-            const comments = await github.rest.issues.listComments({owner, repo, issue_number});
-            const existing = comments.data.find(c => c.body && c.body.startsWith(bodyHeader));
+
+            // Compute flags inside JS, not via ${{ ... }}
+            const pr = context.payload.pull_request;
+            const isFork = !!(pr && pr.head && pr.head.repo && pr.head.repo.fork);
+            const labels = (pr && pr.labels ? pr.labels.map(l => l.name) : []);
+            const hasLabel = labels.includes('mybot:apply');
+
+            const footer = [
+              hasLabel ? "Label `mybot:apply` present" : "Label `mybot:apply` missing",
+              isFork ? "**Fork PR:** cannot apply patches automatically." : ""
+            ].filter(Boolean).join("\n");
+
             const body = `${bodyHeader}
 
 ${summary}
 
-${{ steps.ctx.outputs.has_label == 'true' ? 'Label `mybot:apply` present' : 'Label `mybot:apply` missing' }}
-${{ steps.ctx.outputs.is_fork == 'true' ? '**Fork PR:** cannot apply patches automatically.' : '' }}
+${footer}
 `;
+
+            const {owner, repo} = context.repo;
+            const issue_number = pr.number;
+            const comments = await github.rest.issues.listComments({owner, repo, issue_number});
+            const existing = comments.data.find(c => c.body && c.body.startsWith(bodyHeader));
             if (existing) {
               await github.rest.issues.updateComment({owner, repo, comment_id: existing.id, body});
             } else {
