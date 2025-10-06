@@ -1,0 +1,11 @@
+name: MyBoT
+version: 0.1.0
+description: >
+  🇬🇧 AI automation assistant for the DuneTube project.
+  🇮🇷 دستیار خودکار هوشمند برای پروژه Dunetube.
+author: Amnmlk2025
+capabilities:
+  - analyze
+  - commit
+  - pull_request
+  - push

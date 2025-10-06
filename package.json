@@ -1,0 +1,11 @@
+{
+  "name": "dunetube-mybot",
+  "version": "0.1.0",
+  "description": "DuneTube AI Integration (MyBoT)",
+  "scripts": {
+    "bot": "node .github/mybot.js"
+  },
+  "dependencies": {
+    "openai": "^4.0.0"
+  }
+}
