@@ -125,12 +125,15 @@ jobs:
 
       - name: Apply patches (only if allowed)
         if: ${{ steps.files.outputs.count != '0' && steps.ctx.outputs.is_fork != 'true' && (steps.ctx.outputs.has_label == 'true' || steps.ctx.outputs.apply_input == 'true') }}
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           set -e
           if [ ! -s patches.diff ]; then
             echo "No patch content found. Skipping apply."
             exit 0
           fi
+
           echo "Attempting to apply patches:"
           echo "--------------------------------"
           cat patches.diff || true
@@ -138,6 +141,15 @@ jobs:
 
           git config user.name "MyBoT"
           git config user.email "bot@dunetube.local"
+
+          # اگر GH_PAT موجود بود، با PAT پوش می‌کنیم تا ورک‌فلوها تریگر شوند؛ وگرنه با GITHUB_TOKEN
+          if [ -n "${GH_PAT:-}" ]; then
+            echo "Using GH_PAT for push"
+            git remote set-url origin "https://${GH_PAT}@github.com/${GITHUB_REPOSITORY}.git"
+          else
+            echo "Using default GITHUB_TOKEN for push"
+            git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          fi
 
           if ! grep -q '^--- ' patches.diff; then
             echo "Patch seems incomplete; skipping apply."
