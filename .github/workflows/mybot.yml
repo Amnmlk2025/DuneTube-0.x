@@ -1,166 +1,186 @@
 name: MyBoT Integration
 
 on:
-  push:
-    branches: [ "main" ]
   pull_request:
   workflow_dispatch:
+    inputs:
+      apply:
+        description: "Apply fixes (true/false)"
+        required: false
+        default: "false"
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 jobs:
-  run-mybot:
+  mybot:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Prepare tools
+      - name: Setup tools
         run: |
           sudo apt-get update -y
           sudo apt-get install -y jq curl
-
-      - name: Show repo & manifest
-        run: |
-          echo "## 📁 Repo tree (top-level)" >> "$GITHUB_STEP_SUMMARY"
-          ls -la | sed 's/^/    /' >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "## 📄 MyBoT manifest" >> "$GITHUB_STEP_SUMMARY"
-          echo '```yaml' >> "$GITHUB_STEP_SUMMARY"
-          cat MyBoT/manifest.yaml >> "$GITHUB_STEP_SUMMARY" || echo "manifest.yaml not found" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Sanity check OpenAI key
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           set -e
-          CODE=$(curl -s -o /dev/null -w "%{http_code}" https://api.openai.com/v1/models \
-                   -H "Authorization: Bearer $OPENAI_API_KEY")
-          echo "HTTP status from /v1/models = $CODE"
-          test "$CODE" = "200"
+          code=$(curl -s -o /dev/null -w "%{http_code}" https://api.openai.com/v1/models \
+                 -H "Authorization: Bearer $OPENAI_API_KEY")
+          echo "OpenAI /v1/models HTTP $code"
+          test "$code" = "200"
 
-      - name: Build file list
+      - name: Detect context & decide apply mode
+        id: ctx
+        run: |
+          # Detect if this PR comes from a fork
+          IS_FORK="${{ github.event.pull_request.head.repo.fork && 'true' || 'false' }}"
+          echo "is_fork=$IS_FORK" >> $GITHUB_OUTPUT
+
+          # Check label for apply permission
+          LABELS="${{ join(github.event.pull_request.labels.*.name, ' ') }}"
+          HAS_LABEL="false"
+          echo "$LABELS" | grep -q "mybot:apply" && HAS_LABEL="true"
+          echo "has_label=$HAS_LABEL" >> $GITHUB_OUTPUT
+
+          # Check workflow_dispatch input
+          APPLY_INPUT="${{ inputs.apply }}"
+          [ -z "$APPLY_INPUT" ] && APPLY_INPUT="false"
+          echo "apply_input=$APPLY_INPUT" >> $GITHUB_OUTPUT
+
+      - name: Build changed file list
         id: files
         shell: bash
         run: |
           set -e
-          case "${{ github.event_name }}" in
-            pull_request)
-              echo "📂 Pull Request detected → comparing with base branch"
-              git fetch origin ${{ github.base_ref }} --depth=1
-              DIFF=$(git diff --name-only --diff-filter=AM origin/${{ github.base_ref }}...HEAD || true)
-              ;;
-            push)
-              echo "📂 Push detected → comparing last two commits"
-              DIFF=$(git diff --name-only --diff-filter=AM HEAD~1 HEAD || true)
-              ;;
-            *)
-              echo "📂 Manual run → analyzing common source files"
-              DIFF=$(git ls-files | grep -E '\.(md|py|js|ts|tsx|json|yml|yaml)$' | head -n 60 || true)
-              ;;
-          esac
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch origin ${{ github.base_ref }} --depth=1
+            DIFF=$(git diff --name-only --diff-filter=AM origin/${{ github.base_ref }}...HEAD || true)
+          else
+            DIFF=$(git ls-files | head -n 60)
+          fi
 
-          FILES=$(echo "$DIFF" | grep -Ev '(^$|^node_modules/|^dist/|^build/|^.git/|^.github/)' || true)
-          echo "Files selected for analysis:"
-          echo "$FILES"
+          FILES=$(echo "$DIFF" | grep -E '\.(py|js|ts|tsx|md|json|yml|yaml|css|html)$' | \
+                  grep -Ev '(^$|^node_modules/|^dist/|^build/|^.git/|^.github/)' | head -n 60 || true)
           echo "$FILES" > files.txt
           echo "count=$(wc -l < files.txt | tr -d ' ')" >> $GITHUB_OUTPUT
 
-      - name: Analyze with OpenAI
+      - name: Analyze & propose patches
         if: steps.files.outputs.count != '0'
+        id: propose
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        shell: bash
         run: |
           set -e
-          echo "## 🤖 MyBoT AI Summary" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "## 🤖 MyBoT AI Summary" > summary.md
+          echo "" >> summary.md
 
-          summarize_chunk () {
-            local path="$1"
-            local chunk="$2"
-            local tries=0
-            local maxtries=3
-            local payload
-            payload=$(jq -n --arg f "$path" --arg c "$chunk" \
-              '{model:"gpt-4o-mini",
-                messages:[
-                  {role:"system",content:"You are a senior repo analysis assistant."},
-                  {role:"user",content:("Summarize the content and propose up to 8 concrete improvements. File: "+$f+"\n---\n"+$c)}
-                ],
-                max_tokens: 350}')
+          gen_prompt () {
+            local f="$1"
+            local content
+            content="$(sed 's/`/\\`/g' "$f" | head -c 48000)"
+            jq -n --arg f "$f" --arg c "$content" \
+            '{
+              model:"gpt-4o-mini",
+              messages:[
+                {role:"system","content":"You are a meticulous senior software engineer. Output only clear analysis and, when edits are needed, a unified diff patch between BEGIN_PATCH and END_PATCH. Never include explanations inside the patch."},
+                {role:"user","content":
+"Repository policy:
+- Keep style and architecture consistent.
+- Small, safe changes per file; no sweeping rewrites.
+- Only modify the given file.
+- If no change is needed, do not output a patch.
 
-            while : ; do
-              resp=$(curl -sS https://api.openai.com/v1/chat/completions \
-                       -H "Authorization: Bearer '"$OPENAI_API_KEY"'" \
-                       -H "Content-Type: application/json" \
-                       -d "$payload" || true)
-              text=$(echo "$resp" | jq -r '.choices[0].message.content // empty')
-              if [ -n "$text" ]; then
-                echo "$text"
-                return 0
-              fi
-              tries=$((tries+1))
-              if [ "$tries" -ge "$maxtries" ]; then
-                echo "⚠️ No AI response after $maxtries tries."
-                echo "Raw error:"
-                echo "$resp" | jq -r '.error.message // . | tostring' 2>/dev/null || echo "$resp"
-                return 0
-              fi
-              sleep 2
-            done
+Task:
+1) Briefly summarize what this file does (≤5 bullets).
+2) Suggest concrete improvements (≤8 bullets).
+3) If improvements are small and safe, output a unified diff for this ONE file only, surrounded by:
+BEGIN_PATCH
+*** Start Patch
+<unified-diff-here>
+*** End Patch
+END_PATCH
+
+File path: \($f)
+----- FILE CONTENT (truncated) -----
+\($c)
+"}
+              ],
+              temperature: 0.2,
+              max_tokens: 800
+            }'
           }
 
-          summarize_file () {
-            local path="$1"
-            echo "### $path" >> "$GITHUB_STEP_SUMMARY"
-            echo "" >> "$GITHUB_STEP_SUMMARY"
+          > patches.diff
+          while IFS= read -r f; do
+            [ -f "$f" ] || continue
+            echo "### $f" >> summary.md
+            PROMPT=$(gen_prompt "$f")
+            RESP=$(curl -sS https://api.openai.com/v1/chat/completions \
+                     -H "Authorization: Bearer $OPENAI_API_KEY" \
+                     -H "Content-Type: application/json" \
+                     -d "$PROMPT")
 
-            local content
-            content="$(sed 's/`/\\`/g' "$path" | head -c 48000)"
-            if [ -z "$content" ]; then
-              echo "_(empty or binary?)_" >> "$GITHUB_STEP_SUMMARY"
-              echo "" >> "$GITHUB_STEP_SUMMARY"
-              return
+            TEXT=$(echo "$RESP" | jq -r '.choices[0].message.content // ""')
+            if [ -z "$TEXT" ]; then
+              echo "_No AI response._" >> summary.md
+              continue
             fi
 
-            echo "$content" | awk -v size=6000 '{
-              s=$0
-              while (length(s) > 0) { print substr(s,1,size); s=substr(s,size+1) }
-            }' > chunks.tmp
-
-            local chunk_idx=0
-            while IFS= read -r chunk; do
-              chunk_idx=$((chunk_idx+1))
-              echo "**Part $chunk_idx**" >> "$GITHUB_STEP_SUMMARY"
-              summarize_chunk "$path" "$chunk" >> "$GITHUB_STEP_SUMMARY"
-              echo "" >> "$GITHUB_STEP_SUMMARY"
-              if [ "$chunk_idx" -ge 3 ]; then
-                echo "_(truncated after 3 parts)_" >> "$GITHUB_STEP_SUMMARY"
-                break
-              fi
-            done < chunks.tmp
-            rm -f chunks.tmp
-          }
-
-          while IFS= read -r f; do
-            [ -f "$f" ] && summarize_file "$f" || true
+            echo "$TEXT" >> summary.md
+            # Extract patch block safely
+            echo "$TEXT" | awk '/BEGIN_PATCH/{flag=1;next}/END_PATCH/{flag=0}flag' \
+              | sed '1,1d;$d' \
+              | sed '1,/^\*\*\* Start Patch/d' >> patches.diff
           done < files.txt
 
-          echo "✅ MyBoT completed AI analysis." >> "$GITHUB_STEP_SUMMARY"
+          echo "summary_path=summary.md" >> $GITHUB_OUTPUT
 
-      - name: Prepare PR comment body
-        if: github.event_name == 'pull_request' && steps.files.outputs.count != '0'
+      - name: Show Summary
+        if: steps.files.outputs.count != '0'
         run: |
-          echo "### 🤖 MyBoT AI Summary" > pr-comment.md
-          echo "" >> pr-comment.md
-          echo "_See full details in the Actions run summary._" >> pr-comment.md
+          cat summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Apply patches (only if allowed)
+        if: steps.files.outputs.count != '0' && steps.ctx.outputs.is_fork != 'true' && (steps.ctx.outputs.has_label == 'true' || steps.ctx.outputs.apply_input == 'true')
+        run: |
+          set -e
+          if [ ! -s patches.diff ]; then
+            echo "No patch content found. Skipping apply."
+            exit 0
+          fi
+          echo "Attempting to apply patches:"
+          echo "--------------------------------"
+          cat patches.diff || true
+          echo "--------------------------------"
+
+          # Try to apply; if fails, abort gracefully
+          git config user.name "MyBoT"
+          git config user.email "bot@dunetube.local"
+
+          # Ensure diff headers exist; if not, try to auto-add
+          if ! grep -q '^--- ' patches.diff; then
+            echo "⚠️ Patch seems incomplete; skipping apply."
+            exit 0
+          fi
+
+          git apply --index --reject patches.diff || true
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(mybot): auto-fixes from MyBoT"
+            git push
+            echo "applied=true" >> $GITHUB_OUTPUT
+          else
+            echo "No staged changes; nothing to commit."
+            echo "applied=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Comment on PR
         if: github.event_name == 'pull_request' && steps.files.outputs.count != '0'
@@ -169,12 +189,20 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const body = fs.readFileSync('pr-comment.md', 'utf8');
+            const bodyHeader = "### 🤖 MyBoT AI Summary";
+            const summary = fs.readFileSync('summary.md','utf8');
+            const applied = core.getInput('applied') || '';
+            const body = `${bodyHeader}
+
+${summary}
+
+_${{ steps.ctx.outputs.has_label == 'true' ? 'Label `mybot:apply` present' : 'Label `mybot:apply` missing' }}_
+${{ steps.ctx.outputs.is_fork == 'true' ? '**Fork PR:** cannot apply patches automatically.' : '' }}
+`;
             const {owner, repo} = context.repo;
             const issue_number = context.payload.pull_request.number;
-            const header = "### 🤖 MyBoT AI Summary";
             const comments = await github.rest.issues.listComments({owner, repo, issue_number});
-            const existing = comments.data.find(c => c.body && c.body.startsWith(header));
+            const existing = comments.data.find(c => c.body && c.body.startsWith(bodyHeader));
             if (existing) {
               await github.rest.issues.updateComment({owner, repo, comment_id: existing.id, body});
             } else {
