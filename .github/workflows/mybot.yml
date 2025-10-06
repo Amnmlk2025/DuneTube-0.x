@@ -12,17 +12,18 @@ permissions:
 jobs:
   run-mybot:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: List repo & show manifest path
         run: |
-          echo "Repo tree (top-level):" >> "$GITHUB_STEP_SUMMARY"
+          echo "## 📁 Repo tree (top-level)" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
           ls -la | sed 's/^/    /' >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "MyBoT manifest:" >> "$GITHUB_STEP_SUMMARY"
-          ls -la MyBoT || true
+          echo "## 📄 MyBoT manifest" >> "$GITHUB_STEP_SUMMARY"
           echo '```yaml' >> "$GITHUB_STEP_SUMMARY"
           cat MyBoT/manifest.yaml >> "$GITHUB_STEP_SUMMARY" || echo "manifest.yaml not found" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
@@ -30,34 +31,62 @@ jobs:
       - name: Prepare tools
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y jq
+          sudo apt-get install -y jq curl
 
       - name: Analyze & summarize key files with OpenAI
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           set -e
-          FILES="$(git ls-files | head -n 50)"
-          echo "## MyBoT Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "## 🤖 MyBoT AI Summary" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
 
           summarize () {
             local path="$1"
-            CONTENT="$(head -c 5000 "$path" | sed 's/`/\\`/g')"
-            PROMPT=$(jq -n --arg f "$path" --arg c "$CONTENT" \
-              '{model:"gpt-4o-mini", messages:[{role:"system",content:"You are a repo analysis assistant."},
-                                                {role:"user",content:("Summarize this file and suggest improvements (max 8 bullets). File: "+$f+"\n---\n"+$c)}], max_tokens: 400}')
-            RESP=$(curl -sS https://api.openai.com/v1/chat/completions \
-                    -H "Authorization: Bearer '"$OPENAI_API_KEY"'" \
-                    -H "Content-Type: application/json" \
-                    -d "$PROMPT")
-            TEXT=$(echo "$RESP" | jq -r '.choices[0].message.content // "No response"')
+            if [ ! -f "$path" ]; then
+              echo "Skipping missing file: $path"
+              return
+            fi
+
             echo "### $path" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
+            CONTENT=$(head -c 4000 "$path" | sed 's/`/\\`/g')
+            DATA=$(jq -n --arg f "$path" --arg c "$CONTENT" \
+              '{model:"gpt-4o-mini",
+                messages:[
+                  {role:"system", content:"You are a senior AI assistant analyzing code and documentation for improvements."},
+                  {role:"user", content:("Summarize and suggest improvements for this file: "+$f+"\n\n---\n"+$c)}
+                ],
+                max_tokens: 350}')
+
+            RESP=$(curl -sS https://api.openai.com/v1/chat/completions \
+                      -H "Authorization: Bearer $OPENAI_API_KEY" \
+                      -H "Content-Type: application/json" \
+                      -d "$DATA")
+            TEXT=$(echo "$RESP" | jq -r '.choices[0].message.content // "⚠️ No AI response."')
+
             echo "$TEXT" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
           }
 
-          for f in README.md MyBoT/README.md MyBoT/instructions.md; do
-            [ -f "$f" ] && summarize "$f" || true
+          # 🔍 Files to analyze — add or adjust as you like
+          FILES=(
+            "README.md"
+            "ROADMAP.md"
+            "MyBoT/README.md"
+            "MyBoT/instructions.md"
+            "backend"
+            "frontend"
+          )
+
+          for f in "${FILES[@]}"; do
+            if [ -d "$f" ]; then
+              for sub in $(find "$f" -maxdepth 1 -type f -name "*.py" -o -name "*.js" -o -name "*.md" | head -n 3); do
+                summarize "$sub"
+              done
+            else
+              summarize "$f"
+            fi
           done
+
+          echo "✅ MyBoT completed AI analysis." >> "$GITHUB_STEP_SUMMARY"
