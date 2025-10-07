@@ -7,8 +7,6 @@ import { PreferencesProvider, usePreferences } from "./context/PreferencesContex
 import Catalog from "./pages/Catalog";
 import CourseDetail from "./pages/CourseDetail";
 import Home from "./pages/Home";
-import Studio from "./pages/Studio";
-import Wallet from "./pages/Wallet";
 
 const App = () => {
   const { t, i18n } = useTranslation();
@@ -53,26 +51,6 @@ const App = () => {
               }
             >
               {t("nav.catalog")}
-            </NavLink>
-            <NavLink
-              to="/studio"
-              className={({ isActive }) =>
-                `rounded-full px-4 py-2 transition ${
-                  isActive ? "bg-primary text-white" : "hover:bg-primary/10"
-                }`
-              }
-            >
-              {t("nav.studio")}
-            </NavLink>
-            <NavLink
-              to="/wallet"
-              className={({ isActive }) =>
-                `rounded-full px-4 py-2 transition ${
-                  isActive ? "bg-primary text-white" : "hover:bg-primary/10"
-                }`
-              }
-            >
-              {t("nav.wallet")}
             </NavLink>
           </nav>
           <div className="flex flex-wrap items-center gap-3 text-xs">
@@ -120,14 +98,12 @@ const App = () => {
               <Route path="/" element={<Home />} />
               <Route path="/catalog" element={<Catalog />} />
               <Route path="/courses/:courseId" element={<CourseDetail />} />
-              <Route path="/studio" element={<Studio />} />
-              <Route path="/wallet" element={<Wallet />} />
             </Routes>
           </Suspense>
         </main>
 
         <footer className="py-8 text-center text-sm text-slate-500">
-          © {new Date().getFullYear()} DuneTube · {t("footer.rights")}
+          &copy; {new Date().getFullYear()} DuneTube - {t("footer.rights")}
         </footer>
       </div>
     </div>
@@ -141,3 +117,4 @@ const AppWithProviders = () => (
 );
 
 export default AppWithProviders;
+
