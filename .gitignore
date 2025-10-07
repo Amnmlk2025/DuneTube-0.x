@@ -1,21 +1,52 @@
+# === Python / Django ===
 __pycache__/
 *.py[cod]
 *.sqlite3
 *.log
+*.pot
+*.pyc
+db.sqlite3
+backend/db.sqlite3
+*.mo
+
+# === Environment ===
 .env
 .env.*
 .venv/
 venv/
+ENV/
+env.bak/
+
+# === Node / Frontend ===
 node_modules/
 dist/
 build/
+frontend/node_modules/
+frontend/dist/
+*.patch
+
+# === Editor / System ===
+.vscode/
+.idea/
 .DS_Store
+Thumbs.db
+
+# === Coverage / Static ===
 coverage/
 staticfiles/
-backend/db.sqlite3
+media/
+uploads/
 nul
+
+# === Project-specific temp ===
 agents-mode.patch
 patches/
 frontend/test-smoke.js
 frontend/src/components/tests/
 frontend/src/context/tests/
+frontend/.env
+infra/.env
+
+# === MyBoT & scripts ===
+MyBoT/tmp/
+MyBoT/__pycache__/
