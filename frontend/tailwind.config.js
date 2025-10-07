@@ -5,14 +5,19 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: "#0f766e",
-          dark: "#115e59",
-          light: "#5eead4",
+          DEFAULT: "#0A355C",
+          dark: "#072746",
+          light: "#144B80",
         },
-        sand: "#f5deb3",
+        secondary: {
+          DEFAULT: "#E8DCC8",
+          dark: "#D2C1A1",
+          light: "#F2EAD9",
+        },
+        sand: "#E8DCC8",
       },
       fontFamily: {
-        sans: ["Inter", "Roboto", "Tahoma", "sans-serif"],
+        sans: ["Poppins", "Vazirmatn", "ui-sans-serif", "system-ui", "sans-serif"],
       },
     },
   },

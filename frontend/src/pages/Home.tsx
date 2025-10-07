@@ -61,7 +61,7 @@ const Home = () => {
           </button>
         </div>
         {status !== "idle" ? (
-          <p className={`text-sm font-medium ${status === "ok" ? "text-emerald-600" : "text-rose-600"}`}>
+          <p className={`text-sm font-medium ${status === "ok" ? "text-primary" : "text-rose-600"}`}>
             {statusMessage()}
           </p>
         ) : null}
@@ -73,9 +73,9 @@ const Home = () => {
           <div className="space-y-4">
             <p className="text-sm uppercase tracking-widest text-primary">Mentat Insights</p>
             <p className="text-lg font-medium text-slate-800">
-              “The mind can go either direction under stress—toward positive or toward negative: on or off.”
+              "The mind can go either direction under stress--toward positive or toward negative: on or off."
             </p>
-            <p className="text-sm text-slate-500">— Bene Gesserit Truisms</p>
+            <p className="text-sm text-slate-500">-- Bene Gesserit Truisms</p>
           </div>
         </div>
       </div>
@@ -84,3 +84,4 @@ const Home = () => {
 };
 
 export default Home;
+

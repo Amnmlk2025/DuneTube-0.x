@@ -23,7 +23,10 @@ INSTALLED_APPS = [
     "rest_framework",
     "drf_spectacular",
     "django_filters",
-    "core.apps.CoreConfig",
+    "users.apps.UsersConfig",
+    "courses.apps.CoursesConfig",
+    "lessons.apps.LessonsConfig",
+    "reviews.apps.ReviewsConfig",
 ]
 
 MIDDLEWARE = [
@@ -116,6 +119,8 @@ REST_FRAMEWORK = {
         "rest_framework.filters.SearchFilter",
         "rest_framework.filters.OrderingFilter",
     ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": int(os.environ.get("API_PAGE_SIZE", 12)),
 }
 
 SPECTACULAR_SETTINGS = {
