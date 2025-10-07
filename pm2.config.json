@@ -1,0 +1,39 @@
+{
+  "apps": [
+    {
+      "name": "dunetube-backend",
+      "cwd": "backend",
+      "interpreter": "python",
+      "script": "manage.py",
+      "args": "runserver 0.0.0.0:8000 --noreload",
+      "exec_mode": "fork",
+      "instances": 1,
+      "watch": false,
+      "windowsHide": true,
+      "env": {
+        "PYTHONUNBUFFERED": "1",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "out_file": "./logs/backend.out.log",
+      "error_file": "./logs/backend.err.log",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss"
+    },
+    {
+      "name": "dunetube-frontend",
+      "cwd": "frontend",
+      "interpreter": "node",
+      "script": "./node_modules/vite/bin/vite.js",
+      "args": "--host 0.0.0.0 --port 5173",
+      "exec_mode": "fork",
+      "instances": 1,
+      "watch": false,
+      "windowsHide": true,
+      "out_file": "./logs/frontend.out.log",
+      "error_file": "./logs/frontend.err.log",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss",
+      "env": {
+        "VITE_API_BASE": "http://127.0.0.1:8000/api"
+      }
+    }
+  ]
+}

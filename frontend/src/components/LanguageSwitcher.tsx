@@ -11,9 +11,9 @@ const LanguageSwitcher = () => {
   };
 
   return (
-    <div className="flex items-center gap-2 text-sm">
-      <span className="font-medium text-slate-600">{t("languageSwitcher.label")}</span>
-      <div className="inline-flex rounded-full bg-white shadow-sm ring-1 ring-slate-200">
+    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-300">
+      <span>{t("languageSwitcher.label")}</span>
+      <div className="inline-flex overflow-hidden rounded-full border border-surface-hover bg-surface-subtle/80 backdrop-blur">
         {supportedLanguages.map((lang) => {
           const isActive = i18n.language.startsWith(lang.code);
           return (
@@ -21,10 +21,10 @@ const LanguageSwitcher = () => {
               key={lang.code}
               type="button"
               onClick={() => changeLanguage(lang.code)}
-              className={`px-3 py-1 text-sm transition-colors duration-150 first:rounded-l-full last:rounded-r-full ${
+              className={`golden-click px-3 py-1 text-xs transition-colors duration-150 ${
                 isActive
-                  ? "bg-primary text-white shadow-inner"
-                  : "text-slate-600 hover:bg-slate-100"
+                  ? "bg-brand-gold text-surface font-bold text-surface shadow-glow-gold"
+                  : "text-slate-300 hover:bg-surface-hover"
               }`}
             >
               {lang.label}

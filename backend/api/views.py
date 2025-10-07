@@ -1,10 +1,10 @@
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 
-class HealthCheckView(APIView):
-    permission_classes = [AllowAny]
-
-    def get(self, request, *args, **kwargs):
-        return Response({"ok": True, "service": "dunetube-api"})
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def healthz(_request):
+    """Return a simple health payload for uptime probes."""
+    return Response({"ok": True, "service": "dunetube-api"})

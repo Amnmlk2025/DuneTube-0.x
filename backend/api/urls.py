@@ -4,7 +4,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from api.views import HealthCheckView
+from api.views import healthz
 from courses.views import CourseViewSet
 from lessons.views import LessonViewSet
 from reviews.views import CourseReviewViewSet
@@ -25,5 +25,5 @@ urlpatterns = [
     path("api/auth/roles/", RoleListView.as_view(), name="auth-roles"),
     path("api/auth/roles/activate/", RoleActivationView.as_view(), name="auth-roles-activate"),
     path("api/", include(router.urls)),
-    path("healthz", HealthCheckView.as_view(), name="healthz"),
+    path("api/healthz/", healthz, name="healthz"),
 ]
