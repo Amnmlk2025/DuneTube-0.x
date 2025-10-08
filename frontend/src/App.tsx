@@ -10,6 +10,7 @@ import Profile from "./pages/Profile";
 import PublisherProfile from "./pages/PublisherProfile";
 import TeacherProfile from "./pages/TeacherProfile";
 import WatchLesson from "./pages/WatchLesson";
+import Home from "./pages/Home";
 
 const AppShell = () => {
   const { t } = useTranslation();
@@ -24,7 +25,7 @@ const AppShell = () => {
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 md:px-6">
         <Suspense fallback={<div className="py-20 text-center text-sm text-slate-500">{t("catalog.loading")}</div>}>
           <Routes>
-            <Route path="/" element={<Catalog />} />
+            <Route path="/" element={<Home />} />
             <Route path="/catalog" element={<Catalog />} />
             <Route path="/courses/:courseId" element={<CourseDetail />} />
             <Route path="/profile" element={<Profile />} />
