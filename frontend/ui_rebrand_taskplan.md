@@ -76,7 +76,7 @@ Codex باید پس از اجرای هر بخش وضعیت را در این فا
    - پروفایل: مهمان → مودال لاگین، لاگین → `/profile`.
 2. هدر sticky با پس‌زمینه `bg-white/90` و `backdrop-blur`، بدون زمینه‌های رنگی پهن.
 3. **Commit:** `feat(ui): minimal branded Header with search/lang/settings/profile`
-4. تست دستی:
+**Status:** ?
    - نمایش صحیح هدر در صفحه اصلی.
    - باز/بسته شدن نوار جستجو.
    - کارکرد منوی زبان و مودال تنظیمات.
