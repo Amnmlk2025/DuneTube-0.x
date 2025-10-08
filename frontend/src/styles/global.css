@@ -3,10 +3,19 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
-  background-color: #0f172a;
-  color: #f8fafc;
-  font-family: "Inter", "Vazirmatn", "Cairo", ui-sans-serif, system-ui, sans-serif;
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-white text-slate-900 antialiased;
+  margin: 0;
+  font-family: "Poppins", "Vazirmatn", "Cairo", "Inter", ui-sans-serif, system-ui, sans-serif;
   font-feature-settings:
     "ss01" on,
     "ss02" on,
@@ -16,16 +25,7 @@
 }
 
 html[dir="rtl"] body {
-  font-family: "Vazirmatn", "Cairo", "Inter", ui-sans-serif, system-ui, sans-serif;
-}
-
-body {
-  margin: 0;
-  min-height: 100vh;
-  background-image:
-    radial-gradient(circle at 20% 20%, rgba(201, 166, 107, 0.25), transparent 60%),
-    radial-gradient(circle at 80% 0%, rgba(15, 23, 42, 0.75), transparent 55%),
-    linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.98));
+  font-family: "Vazirmatn", "Cairo", "Poppins", "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
 a {
@@ -36,19 +36,19 @@ a {
 .golden-click {
   position: relative;
   overflow: hidden;
-  transition: transform 120ms ease, box-shadow 180ms ease;
+  transition: transform 120ms ease, box-shadow 180ms ease, background-color 180ms ease;
 }
 
 .golden-click:active {
   transform: scale(0.97);
-  box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.35);
+  box-shadow: 0 0 0 2px rgba(10, 53, 92, 0.16);
 }
 
 .golden-click::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center, rgba(250, 204, 21, 0.35), transparent 65%);
+  background: radial-gradient(circle at center, rgba(232, 220, 200, 0.18), transparent 70%);
   opacity: 0;
   transition: opacity 220ms ease;
 }
@@ -72,10 +72,10 @@ a {
 }
 
 .scroll-rail::-webkit-scrollbar-track {
-  background: rgba(148, 163, 184, 0.15);
+  background: rgba(232, 220, 200, 0.45);
 }
 
 .scroll-rail::-webkit-scrollbar-thumb {
-  background: linear-gradient(90deg, rgba(250, 204, 21, 0.6), rgba(248, 250, 252, 0.35));
+  background: linear-gradient(90deg, rgba(10, 53, 92, 0.4), rgba(110, 201, 232, 0.25));
   border-radius: 9999px;
 }
