@@ -67,4 +67,37 @@ const formatDateTime = (value: string, locale: string, dateStyle: "short" | "med
   }
 };
 
-export { convertCurrency, formatCurrency, formatCurrencyForDisplay, formatDateTime };
+const formatRelativeTimeFromNow = (value: string, locale: string) => {
+  try {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return value;
+    }
+    const now = Date.now();
+    const diff = date.getTime() - now;
+    const seconds = Math.round(diff / 1000);
+    const units: Array<["year" | "month" | "week" | "day" | "hour" | "minute" | "second", number]> = [
+      ["year", 60 * 60 * 24 * 365],
+      ["month", 60 * 60 * 24 * 30],
+      ["week", 60 * 60 * 24 * 7],
+      ["day", 60 * 60 * 24],
+      ["hour", 60 * 60],
+      ["minute", 60],
+      ["second", 1],
+    ];
+
+    const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
+    for (const [unit, unitSeconds] of units) {
+      if (Math.abs(seconds) >= unitSeconds || unit === "second") {
+        const valueInUnit = Math.round(seconds / unitSeconds);
+        return rtf.format(valueInUnit, unit);
+      }
+    }
+    return value;
+  } catch (error) {
+    console.warn("Unable to format relative time", error);
+    return value;
+  }
+};
+
+export { convertCurrency, formatCurrency, formatCurrencyForDisplay, formatDateTime, formatRelativeTimeFromNow };

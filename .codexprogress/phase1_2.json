@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "steps": [
+    {"id": "tokens_config", "title": "Tokens & Tailwind config", "done": true},
+    {"id": "i18n_rtl", "title": "i18n (fa/en/ar) + RTL toggle", "done": true},
+    {"id": "routes_layout", "title": "Routes & base layout", "done": true},
+    {"id": "home_health", "title": "Home + API health button", "done": true},
+    {"id": "catalog_grid", "title": "Catalog grid + pagination", "done": true},
+    {"id": "course_card", "title": "CourseCard + Golden Click", "done": true},
+    {"id": "course_detail", "title": "CourseDetail: lessons + reviews", "done": true},
+    {"id": "api_client_types", "title": "API client & types", "done": true},
+    {"id": "backend_health_api", "title": "Backend /api/healthz wiring", "done": true},
+    {"id": "finalize_script", "title": "Populate scripts/finalize-dev.ps1", "done": false}
+  ],
+  "last_batch_index": 8
+}

@@ -1,6 +1,8 @@
 import type { Course, PaginatedCourses } from "../types/course";
 import type { Lesson } from "../types/lesson";
 import type { Review } from "../types/review";
+import { ApiError } from "../types/api";
+import type { ApiListResponse, ApiErrorPayload } from "../types/api";
 
 const DEFAULT_API_BASE = "http://127.0.0.1:8000/api";
 
@@ -31,11 +33,24 @@ const buildUrl = (
 };
 
 const handleResponse = async <T>(response: Response): Promise<T> => {
-  if (!response.ok) {
-    const error = new Error(`Request failed with status ${response.status}`);
-    throw error;
+  if (response.ok) {
+    return (await response.json()) as T;
   }
-  return (await response.json()) as T;
+
+  let payload: ApiErrorPayload | undefined;
+  try {
+    payload = (await response.json()) as ApiErrorPayload;
+  } catch {
+    // ignore parse errors
+  }
+
+  const message =
+    payload?.detail ??
+    (response.status === 404
+      ? "Resource not found"
+      : `Request failed with status ${response.status}`);
+
+  throw new ApiError(response.status, message, payload);
 };
 
 const fetchJson = async <T>(input: string | URL, options?: RequestOptions): Promise<T> => {
@@ -60,6 +75,9 @@ type CourseQuery = {
   page_size?: number;
   search?: string;
   ordering?: string;
+  publisher?: string;
+  teacher?: string | number;
+  language?: string;
 };
 
 const listCourses = async (
@@ -75,19 +93,23 @@ const getCourse = async (courseId: string | number, options?: RequestOptions): P
   return fetchJson<Course>(url.toString(), options);
 };
 
-const listLessons = async (
-  courseId: string | number,
-  options?: RequestOptions,
-): Promise<Lesson[]> => {
-  const url = buildUrl("lessons/", { course: courseId, ordering: "order" });
-  const payload = await fetchJson<Lesson[] | { results: Lesson[] }>(url.toString(), options);
+const extractResults = <T>(payload: T[] | ApiListResponse<T> | null | undefined): T[] => {
+  if (!payload) {
+    return [];
+  }
   if (Array.isArray(payload)) {
     return payload;
   }
-  if (Array.isArray(payload?.results)) {
+  if (Array.isArray(payload.results)) {
     return payload.results;
   }
   return [];
+};
+
+const listLessons = async (courseId: string | number, options?: RequestOptions): Promise<Lesson[]> => {
+  const url = buildUrl("lessons/", { course: courseId, ordering: "order" });
+  const payload = await fetchJson<Lesson[] | ApiListResponse<Lesson>>(url.toString(), options);
+  return extractResults(payload);
 };
 
 const listCourseReviews = async (
@@ -95,14 +117,8 @@ const listCourseReviews = async (
   options?: RequestOptions,
 ): Promise<Review[]> => {
   const url = buildUrl(`courses/${courseId}/reviews/`);
-  const payload = await fetchJson<Review[] | { results: Review[] }>(url.toString(), options);
-  if (Array.isArray(payload)) {
-    return payload;
-  }
-  if (Array.isArray(payload?.results)) {
-    return payload.results;
-  }
-  return [];
+  const payload = await fetchJson<Review[] | ApiListResponse<Review>>(url.toString(), options);
+  return extractResults(payload);
 };
 
 export {

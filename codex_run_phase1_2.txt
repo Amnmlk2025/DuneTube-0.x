@@ -1,0 +1,114 @@
+--approval-policy never
+auto_continue = true
+auto_continue_delay = 3
+RUN PLAN v1 — DuneTube Phase 1/2
+
+SCOPE
+- Implement homepage like YouTube, course cards, carousels (short videos & tests), infinite scroll with interleaving, RTL/i18n (fa/en/ar), brand tokens (deep blue + sand, no green), login/signup modal, proper header actions, catalog grid with pagination, course detail (lessons/reviews), and “golden click” video behavior as specified below.
+
+BATCH POLICY
+- Max 10 files and 1000 changed lines per batch.
+- After each batch: (1) print compact changelog (path + ±lines), (2) update checkpoint JSON, (3) STOP.
+
+CHECKPOINT (for resume)
+- File: .codexprogress/phase1_2.json
+- Shape:
+  {
+    "version": 1,
+    "steps": [
+      {"id":"tokens_config","title":"Brand tokens & Tailwind","done":false},
+      {"id":"i18n_rtl","title":"i18n (fa/en/ar) + RTL","done":false},
+      {"id":"routes_layout","title":"Header, footer, routes","done":false},
+      {"id":"filters_row","title":"Homepage filters logic","done":false},
+      {"id":"shorts_carousel","title":"Short videos carousel","done":false},
+      {"id":"tests_carousel","title":"Tests carousel","done":false},
+      {"id":"infinite_mix","title":"Infinite scroll + interleave","done":false},
+      {"id":"course_card","title":"YouTube-like CourseCard","done":false},
+      {"id":"catalog_grid","title":"Catalog grid + pagination","done":false},
+      {"id":"course_detail","title":"Course detail (lessons/reviews)","done":false},
+      {"id":"golden_click","title":"Golden click behavior","done":false},
+      {"id":"health_button","title":"Home health button","done":false},
+      {"id":"finalize_script","title":"Write scripts/finalize-dev.ps1","done":false}
+    ],
+    "last_batch_index": 0
+  }
+- On start: create the file if missing; continue at first step with done=false.
+- On partial progress (token/time limits): finish current file safely, save, tick what’s done, update last_batch_index, STOP. Next run resumes.
+
+OUTPUT (each batch)
+- Print:
+  [BATCH n] Changed files:
+    - path/to/file (+X/-Y)
+  Next step: <id> or DONE
+  Checkpoint: .codexprogress/phase1_2.json
+
+FILES (typical touchpoints; adjust per spec)
+- frontend/tailwind.config.js
+- frontend/src/index.css (or styles/globals.css)
+- frontend/src/i18n.ts
+- frontend/src/App.tsx
+- frontend/src/components/{CourseCard.tsx,LanguageSwitcher.tsx}
+- frontend/src/pages/{Home.tsx,Catalog.tsx,CourseDetail.tsx}
+- frontend/src/lib/api.ts
+- backend/api/{urls.py,views.py}  (health at /api/healthz/)
+- pm2.config.json
+- scripts/finalize-dev.ps1  (append-only; do not execute here)
+
+TEST PLAN (quick)
+- GET /api/healthz → 200, { ok: true }
+- Home: health button turns green on success; filters row works; carousels render; infinite scroll interleaves blocks.
+- Catalog: grid loads with pagination.
+- CourseCard: click image → if lessons exist for same course, navigate /watch/:firstLessonId; else /course/:id.
+- CourseDetail: lessons ordered; reviews list present.
+- i18n: switching fa/ar sets RTL and translates menus and menu contents.
+- Brand: deep blue primary (#0A355C) + sand (#E8DCC8); no green; fonts like YouTube (Poppins / Vazirmatn acceptable).
+
+FINALIZATION
+- Append idempotent commands to scripts/finalize-dev.ps1 (backend venv/pip/migrate, frontend npm install if needed, ensure frontend/.env with VITE_API_BASE, pm2 start/restart & save). Do not execute.
+- At the very end print exactly:
+### READY — RUN scripts/finalize-dev.ps1 ONCE
+
+──────────────────────────────────────────────────────────────────────────────
+[USER_SPEC_FA]  (بدون تفسیر، متن شما)
+صفحه لندینگ باید مثل یوتیوب باشد با مشخصات زیر:
+
+در هدر لوگوی باشد که هر وقت روی آن زده شد به صفحه لندینگ هدایت شود
+یک آیکون ذره بین در هدر باشد که هر وقت روی آن زده شد یک خط جستجو در هدر باز شود و فرد بتواند عبارت مورد نظر خود را در آن جستجو کند.
+یک آیکون پروفایل در هدر باشد که اگر فرد هنوز به صورت مهمان در سایت است با کلیک روی آن به مودال ثبت نام/ورود برود و اگر وارد شده به صفحه پروفایل خود هدایت شود.
+یک آیکون زبان در کنار لوگو وجود داشته باشد که فرد با کلیک روی آن یک منوی دراپ داون که در آن زبانهای پرکاربرد (حداکثر 2 زبان دیگر) و یک گزینه «....» یا «سایر زبانها» وجود داشته باشد که اگر روی گزینه سایر زده شد یک مودال برای نمایش تمام زبانهای در دسترس وجود داشته باشد و فرد بتواند از بین آنها زبان مورد نظر خود را انتخاب کند.
+یک آیکون چرخ دنده وجود داشته باشد که با کلیک روی آن یک مودال باز شود و در آن فرد بتواند تقویم، ارز مورد نظر خود و سایر تنظیمات ضروری را انجام دهد. (همه این موارد از طریق یک دکه در پروفایل و انتقال فرد به صفحه ستینگ نیز در دسترس فرد خواهد بود اینجا فقط دسترسیهای سریع فراهم می شود.)
+در زیر هدر مجموعه ای از فیلترها مثل فناوری، هوش مصنوعی و ... وجود داشته باشد که با کلیک هر فیلتر فعال/غیرفعال شود؛ اگر فیلتر مرتبطی وجود داشت فقط آن‌ها نمایش یابد؛ در غیر اینصورت همه فیلترها نمایش یابد ولی با کلیک فیلتر جدید، فیلتر قبلی غیرفعال شود. در سناریوی فیلتر ترکیبی، با کلیک فیلتر جدید، فیلتر شامل هر دو فعال شود و با کلیک مجدد غیرفعال گردد.
+کاشی دوره‌ها شبیه یوتیوب: ویدیوی مقدمه/معرفی (تصویر بندانگشتی یا اسنپ‌شات فریم). با کلیک تصویر، ویدیو پخش شود و در انتها سؤال «تمایل به شرکت در دوره؟» و امکان «نشان کردن» دوره داده شود. زیر ویدیو: تصویر پروفایل ناشر، سپس نام دوره (بولد) و توضیح یک‌خطی (باقی با …). کلیک روی تصویر ناشر → صفحه ناشر.
+متادیتا زیر آن: نام مدرس (کلیک → صفحه مدرس)، تعداد شرکت‌کننده، مدت زمان از انتشار (۲ ساعت پیش/…/۴ ماه پیش)، میانگین ستاره + آیکون ستاره زرد؛ کلیک روی سایر اجزا → بخش نظرات صفحه دوره. کاشی بدون حاشیه و مرز.
+صفحه لندینگ: یک کروسل ویدیوهای کوتاه (مانند اینستاگرام/یوتیوب Shorts)؛ کلیک روی یکی → پخش رشته‌ای از ویدیوها پشت‌سرهم.
+صفحه لندینگ: یک کروسل آزمون‌ها (شخصیت، هوش، درسی، راهنمایی و رانندگی، …).
+تواتر نمایش دوره‌ها و کروسل‌ها تنظیم‌پذیر باشد. با اسکرول، محتواهای جدید بارگذاری شود؛ امکان قرارگیری کروسل‌ها در میانه صفحه (مثلاً هر ۵ بلوک یک کروسل تست).
+پایین صفحه: لینک قوانین سایت و حریم شخصی.
+رنگ اصلی برند: آبی عمیق؛ رنگ دوم: ماسه‌ای؛ از رنگ سبز استفاده نشود.
+با تغییر زبان، نه فقط نام منوها، بلکه متن داخل منوها نیز ترجمه شود.
+مودال ثبت‌نام/ورود برای مهمان لازم است (در مراحل بعدی هم قابل تکمیل).
+فونت‌های مناسب‌تر (مشابه یوتیوب).
+در تب مرورگر، لوگو و نام Dunetube درج شود.
+
+[USER_SPEC_EN]  (literal translation; no interpretation)
+Landing page must be like YouTube, with:
+- Header logo (click → landing).
+- Search icon (click → inline search field in header).
+- Profile icon: if guest → open login/signup modal; if logged-in → go to profile page.
+- Language icon near logo: dropdown with up to two common languages and an option “Other…”. Clicking “Other…” opens a modal with all available languages to choose from.
+- Gear icon: opens a modal for quick settings (calendar, currency, other essentials). These are also accessible later via profile/settings page; here it’s just quick access.
+- Below header: clickable filters (e.g., technology, AI…). Clicking toggles filter on/off. If related filters exist, show only related ones; otherwise show all. When unrelated, activating a new filter deactivates the previous. For combined filters: activating a new related filter creates a combined filter containing both; clicking it again deactivates/removes it.
+- Course tiles YouTube-like: show an intro video (thumbnail or snapshot). Clicking the thumbnail plays the video; at the end ask if the user wants to join the course and allow bookmarking.
+- Under the video: publisher avatar, then bold course title and a one-line description (ellipsis if long). Clicking the publisher image → publisher page.
+- Metadata row: teacher name (click → teacher page), participants count, time since publish (“2 hours ago”, “…”, “4 months ago”), average rating number + yellow star icon. Clicking other parts → comments section on course page. Tiles have no borders.
+- Landing has a carousel of short videos (like Instagram/YouTube). Clicking one plays a sequence of shorts back-to-back.
+- Landing has a carousel of tests (personality, IQ, school exams, traffic rules, etc.).
+- Tune frequency of courses vs. carousels; infinite scroll loads new content; carousels may appear mid-page (e.g., every 5 blocks a tests carousel).
+- Footer: links to Terms and Privacy.
+- Branding: deep blue as primary, sand as secondary; do not use green.
+- Language switch translates not only menu titles but also contents inside menus.
+- Login/Signup modal for guests (other states can be added later).
+- Prefer fonts similar to YouTube.
+- Browser tab shows favicon/logo and the name “Dunetube”.
+──────────────────────────────────────────────────────────────────────────────
+(End of file)

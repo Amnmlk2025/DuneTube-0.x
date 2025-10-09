@@ -15,16 +15,25 @@ const resources = {
     translation: {
       layout: {
         tagline: "Stream Arrakis wisdom",
+        tabTitle: "DuneTube | Stream Arrakis wisdom",
       },
       nav: {
         home: "Home",
         catalog: "Catalog",
       },
+      header: {
+        searchPlaceholder: "Search DuneTube…",
+        searchSubmit: "Run search",
+        searchClose: "Close search",
+        searchOpen: "Toggle search bar",
+        openSettings: "Open quick settings",
+        openProfile: "Open profile or sign in",
+      },
       hero: {
-        badge: "New lessons daily",
+        badge: "New lessons every day",
         title: "Stream the knowledge of Arrakis",
         subtitle:
-          "Discover cinematic lessons from Fremen survivalists, Bene Gesserit mentors, and Mentat strategists—curated for lifelong learners.",
+          "Discover cinematic lessons from Fremen survivalists, Bene Gesserit mentors, and Mentat strategists curated for lifelong learners.",
         ctaCatalog: "Browse catalog",
         ctaHealth: "Check API health",
         healthStatus: {
@@ -34,7 +43,7 @@ const resources = {
           fail: "API health check failed.",
         },
         infocard: {
-          title: "Mentat Metrics",
+          title: "Mentat metrics",
           subtitle: "Curated playlists keep your guild sharp.",
           metricsTitle: "Community learners",
           learners: "active explorers",
@@ -47,7 +56,7 @@ const resources = {
         },
         rails: {
           featuredTitle: "Featured for you",
-          featuredSubtitle: "High-signal courses, boosted by Mentat recommendations.",
+          featuredSubtitle: "High-signal courses recommended by Mentat curators.",
           latestTitle: "Latest arrivals",
           latestSubtitle: "Fresh drops from trusted creators across the Dune universe.",
           error: "We could not load spotlight courses. Please try again.",
@@ -61,15 +70,15 @@ const resources = {
         loading: "Loading courses...",
         error: "Unable to load courses. Please try again.",
         empty: "No courses match your filters yet.",
-        searchPlaceholder: "Search by title, publisher, mentor, or tag…",
+        searchPlaceholder: "Search by title, publisher, mentor, or tag...",
         searchAction: "Search",
         clear: "Clear",
         sortLabel: "Sort",
         sortOptions: {
           newest: "Newest",
           title: "Title A-Z",
-          priceAsc: "Price · Low to high",
-          priceDesc: "Price · High to low",
+          priceAsc: "Price | low to high",
+          priceDesc: "Price | high to low",
         },
         reset: "Reset filters",
         paginationStatus: "Page {{page}} of {{totalPages}}",
@@ -80,10 +89,29 @@ const resources = {
         learners: "{{count}} learners enrolled",
         tags: "Tags",
         priceLabel: "Tuition",
+        ctaPreview: "Play intro for {{title}}",
+        publisherLink: "Visit {{publisher}} channel",
+        metadata: {
+          publishedAgo: "Published {{time}}",
+          viewComments: "Comments",
+          joinCourse: "Join course",
+          bookmark: "Bookmark",
+        },
       },
       course: {
         actions: {
           backToCatalog: "Back to catalog",
+          bookmark: "Bookmark course",
+          preview: "Preview intro",
+        },
+        tabs: {
+          overview: "Overview",
+          lessons: "Lessons",
+          reviews: "Reviews",
+        },
+        cta: {
+          join: "Join course",
+          watchFirst: "Watch first lesson",
         },
         errors: {
           notFound: "Course not found.",
@@ -98,7 +126,12 @@ const resources = {
           teacher: "Instructor: {{teacher}}",
           teacherUnknown: "Unknown instructor",
           priceLabelShort: "Tuition",
+          publishedRelative: "Published {{time}}",
+          participants: "{{count}} learners",
           footer: "Pricing adapts to your locale preferences.",
+        },
+        overview: {
+          title: "About this course",
         },
         lessons: {
           title: "Lesson plan",
@@ -117,18 +150,76 @@ const resources = {
       },
       languageSwitcher: {
         label: "Language",
+        current: "Current language",
+        more: "Other languages…",
+        modalTitle: "Choose your language",
+        modalSubtitle: "Pick any language available in DuneTube.",
       },
       preferences: {
         currency: "Currency",
         dateStyle: "Date style",
+        calendar: "Calendar",
         dateStyles: {
           short: "Short",
           medium: "Medium",
           long: "Long",
         },
+        calendarOptions: {
+          gregorian: "Gregorian",
+          jalali: "Jalali",
+          hijri: "Hijri",
+        },
+      },
+      modals: {
+        common: {
+          close: "Close modal",
+        },
+        login: {
+          title: "Sign in or create an account",
+          subtitle: "Access exclusive playlists and keep your progress synced.",
+          emailLabel: "Email",
+          passwordLabel: "Password",
+          submit: "Sign in",
+          continueHint: "You can finish setting up your account later.",
+          continueGuest: "Continue as guest",
+        },
+        settings: {
+          title: "Quick settings",
+          subtitle: "Adjust how DuneTube feels in seconds.",
+          signOut: "Sign out",
+        },
+      },
+      watch: {
+        badge: "Golden click",
+        title: "Lesson {{lessonId}} playback",
+        subtitle: "Full cinematic playback is coming soon. Enjoy the preview while we wire the stream.",
+        placeholder: "We are preparing the Watch experience. For now, check the course details or continue browsing.",
+        backToCatalog: "Back to catalog",
+      },
+      publisher: {
+        badge: "Creator spotlight",
+        title: "Publisher: {{slug}}",
+        subtitle: "We will surface publisher bios, playlists, and live streams here soon.",
+        placeholder: "Stay tuned—publisher profiles will showcase curated collections and stats.",
+        backToCatalog: "Return to catalog",
+      },
+      teacher: {
+        badge: "Mentat mentor",
+        title: "Instructor #{{teacherId}}",
+        subtitle: "A detailed instructor dossier will be available soon.",
+        placeholder: "We are crafting instructor pages with achievements, expertise, and upcoming sessions.",
+        backToCatalog: "Return to catalog",
+      },
+      profile: {
+        badge: "Traveler profile",
+        title: "Your DuneTube profile",
+        subtitle: "More customization is on the way.",
+        placeholder: "We will surface your history, badges, and guild stats in a future update.",
       },
       footer: {
         rights: "All rights reserved.",
+        terms: "Terms of service",
+        privacy: "Privacy policy",
       },
     },
   },
@@ -136,61 +227,70 @@ const resources = {
     translation: {
       layout: {
         tagline: "جریان دانش آراکیس",
+        tabTitle: "دیون‌تیوب | جریان دانش آراکیس",
       },
       nav: {
         home: "خانه",
-        catalog: "فهرست",
+        catalog: "فهرست دوره‌ها",
+      },
+      header: {
+        searchPlaceholder: "در دیون‌تیوب جستجو کنید…",
+        searchSubmit: "اجرای جستجو",
+        searchClose: "بستن جستجو",
+        searchOpen: "نمایش نوار جستجو",
+        openSettings: "باز کردن تنظیمات سریع",
+        openProfile: "نمایه یا ورود",
       },
       hero: {
-        badge: "درس‌های تازه هر روز",
-        title: "دانش سیاره آراکیس را استریم کن",
+        badge: "دوره‌های جدید هر روز",
+        title: "دانش آراکیس را استریم کن",
         subtitle:
-          "درس‌های ویدیویی از فریمن‌ها، معلمان بنه جسرت و منتات‌ها را کشف کن؛ همه به‌صورت منتخب برای یادگیرنده‌های جدی.",
+          "درس‌های سینمایی از بازماندگان فرمن، مربیان بنی‌جزریت و استراتژیست‌های منتات؛ مخصوص یادگیرندگان حرفه‌ای.",
         ctaCatalog: "مشاهده فهرست",
         ctaHealth: "بررسی سلامت API",
         healthStatus: {
-          idle: "برای اطمینان از آماده بودن API دکمه را بزن.",
+          idle: "برای اطمینان از آماده بودن API دکمه سلامت را بزنید.",
           checking: "در حال بررسی سلامت API...",
           ok: "API سالم است.",
           fail: "بررسی سلامت API ناموفق بود.",
         },
         infocard: {
           title: "شاخص‌های منتات",
-          subtitle: "لیست‌های منتخب، انجمن را تیزبین نگه می‌دارد.",
-          metricsTitle: "یادگیرنده‌های جامعه",
+          subtitle: "لیست‌های منتخب، گروه شما را هوشیار نگه می‌دارد.",
+          metricsTitle: "یادگیرندگان جامعه",
           learners: "کاوشگر فعال",
-          caption: "با ادویه دانش مشترک انرژی می‌گیرد.",
+          caption: "با ادویه دانش مشترک نیرو می‌گیریم.",
         },
       },
       home: {
         actions: {
-          viewCatalog: "باز کردن فهرست",
+          viewCatalog: "مشاهده فهرست دوره‌ها",
         },
         rails: {
-          featuredTitle: "انتخاب ویژه برای تو",
-          featuredSubtitle: "دوره‌های پرسیگنال که توسط منتات‌ها پیشنهاد شده‌اند.",
-          latestTitle: "تازه‌ترین‌ها",
-          latestSubtitle: "تازه‌ترین دوره‌ها از سازندگان مورد اعتماد دنیای دون.",
-          error: "لود دوره‌های ویژه ممکن نشد. دوباره تلاش کن.",
-          empty: "به‌محض انتشار مدرس‌ها، دوره‌ها اینجا نشان داده می‌شوند.",
+          featuredTitle: "گزیده مخصوص شما",
+          featuredSubtitle: "دوره‌های پربازده که منتات‌ها پیشنهاد داده‌اند.",
+          latestTitle: "جدیدترین دوره‌ها",
+          latestSubtitle: "تازه‌ترین محتوا از سازندگان مورد اعتماد جهان دیون.",
+          error: "بارگذاری دوره‌های ویژه ممکن نشد. لطفاً دوباره تلاش کنید.",
+          empty: "به محض انتشار مدرس‌ها، دوره‌ها در این بخش ظاهر می‌شوند.",
         },
       },
       catalog: {
         title: "فهرست دوره‌ها",
-        subtitle: "داده‌های زنده از API دون‌تیوب.",
-        count: "{{count}} دوره آماده پخش است.",
+        subtitle: "داده زنده مستقیماً از API دیون‌تیوب.",
+        count: "{{count}} دوره برای استریم آماده است.",
         loading: "در حال بارگذاری دوره‌ها...",
-        error: "لود دوره‌ها ممکن نشد. دوباره تلاش کن.",
-        empty: "هیچ دوره‌ای با فیلترهای فعلی پیدا نشد.",
-        searchPlaceholder: "جستجو بر اساس عنوان، منتشرکننده، مربی یا برچسب…",
+        error: "امکان بارگذاری دوره‌ها نبود. لطفاً دوباره تلاش کنید.",
+        empty: "هیچ دوره‌ای با فیلترهای شما مطابقت ندارد.",
+        searchPlaceholder: "جستجو بر اساس عنوان، ناشر، مدرس یا برچسب...",
         searchAction: "جستجو",
-        clear: "پاک کردن",
+        clear: "پاکسازی",
         sortLabel: "مرتب‌سازی",
         sortOptions: {
           newest: "جدیدترین",
-          title: "عنوان · الف تا ی",
-          priceAsc: "قیمت · صعودی",
-          priceDesc: "قیمت · نزولی",
+          title: "عنوان | الف تا ی",
+          priceAsc: "قیمت | کم به زیاد",
+          priceDesc: "قیمت | زیاد به کم",
         },
         reset: "بازنشانی فیلترها",
         paginationStatus: "صفحه {{page}} از {{totalPages}}",
@@ -198,58 +298,140 @@ const resources = {
         next: "بعدی",
         teacherLabel: "مدرس: {{teacher}}",
         teacherUnknown: "مدرس نامشخص",
-        learners: "{{count}} یادگیرنده ثبت‌نام کرده",
+        learners: "{{count}} نفر شرکت کرده‌اند",
         tags: "برچسب‌ها",
         priceLabel: "شهریه",
+        ctaPreview: "پخش پیش‌نمایش {{title}}",
+        publisherLink: "مشاهده کانال {{publisher}}",
+        metadata: {
+          publishedAgo: "انتشار {{time}}",
+          viewComments: "نظرات",
+          joinCourse: "شرکت در دوره",
+          bookmark: "نشان کردن",
+        },
       },
       course: {
         actions: {
           backToCatalog: "بازگشت به فهرست",
+          bookmark: "نشان کردن دوره",
+          preview: "پخش پیش‌نمایش",
+        },
+        tabs: {
+          overview: "معرفی",
+          lessons: "درس‌ها",
+          reviews: "دیدگاه‌ها",
+        },
+        cta: {
+          join: "شرکت در دوره",
+          watchFirst: "تماشای اولین درس",
         },
         errors: {
           notFound: "دوره پیدا نشد.",
-          generic: "امکان لود این دوره نبود. دوباره امتحان کن.",
+          generic: "امکان نمایش این دوره نبود. لطفاً دوباره تلاش کنید.",
         },
         meta: {
           price: "شهریه: {{price}}",
           language: "زبان: {{language}}",
-          learners: "{{count}} یادگیرنده",
+          learners: "{{count}} نفر",
           rating: "امتیاز: {{rating}} از ۵",
-          publishedAt: "انتشار: {{date}}",
+          publishedAt: "تاریخ انتشار: {{date}}",
           teacher: "مدرس: {{teacher}}",
           teacherUnknown: "مدرس نامشخص",
           priceLabelShort: "شهریه",
-          footer: "قیمت‌ها بر اساس ترجیحات زبان و ارز تو تنظیم می‌شوند.",
+          publishedRelative: "انتشار {{time}}",
+          participants: "{{count}} نفر",
+          footer: "قیمت بر اساس ترجیحات شما تنظیم می‌شود.",
+        },
+        overview: {
+          title: "درباره این دوره",
         },
         lessons: {
           title: "برنامه درسی",
           count: "{{count}} درس",
-          empty: "به‌زودی درس‌ها اینجا نمایش داده می‌شوند.",
+          empty: "به زودی درس‌ها اضافه می‌شوند.",
           lessonLabel: "درس {{order}}",
           preview: "پیش‌نمایش رایگان",
-          watch: "مشاهده درس",
+          watch: "تماشای درس",
         },
         reviews: {
-          title: "بازخورد یادگیرندگان",
-          count: "{{count}} نظر",
-          empty: "هنوز نظری ثبت نشده است.",
+          title: "دیدگاه دانشجویان",
+          count: "{{count}} دیدگاه",
+          empty: "هنوز دیدگاهی ثبت نشده است.",
           rating: "امتیاز: {{rating}} از ۵",
         },
       },
       languageSwitcher: {
         label: "زبان",
+        current: "زبان فعلی",
+        more: "زبان‌های دیگر…",
+        modalTitle: "انتخاب زبان",
+        modalSubtitle: "زبان مورد نظر خود را برای دیون‌تیوب انتخاب کنید.",
       },
       preferences: {
         currency: "ارز",
-        dateStyle: "نمایش تاریخ",
+        dateStyle: "نوع تاریخ",
+        calendar: "تقویم",
         dateStyles: {
           short: "کوتاه",
           medium: "متوسط",
           long: "بلند",
         },
+        calendarOptions: {
+          gregorian: "میلادی",
+          jalali: "جلالی",
+          hijri: "هجری",
+        },
+      },
+      modals: {
+        common: {
+          close: "بستن",
+        },
+        login: {
+          title: "ورود یا ایجاد حساب",
+          subtitle: "به فهرست‌های اختصاصی دسترسی پیدا کنید و پیشرفت خود را ذخیره نمایید.",
+          emailLabel: "ایمیل",
+          passwordLabel: "رمز عبور",
+          submit: "ورود به حساب",
+          continueHint: "می‌توانید بعداً اطلاعات حساب خود را کامل کنید.",
+          continueGuest: "ادامه به صورت مهمان",
+        },
+        settings: {
+          title: "تنظیمات سریع",
+          subtitle: "تجربه دیون‌تیوب را در چند ثانیه تنظیم کنید.",
+          signOut: "خروج از حساب",
+        },
+      },
+      watch: {
+        badge: "پیش‌نمایش طلایی",
+        title: "پخش درس {{lessonId}}",
+        subtitle: "پخش کامل به‌زودی فعال می‌شود. تا آن زمان از پیش‌نمایش لذت ببرید.",
+        placeholder: "در حال آماده‌سازی تجربه تماشا هستیم. فعلاً می‌توانید جزئیات دوره را بررسی کنید.",
+        backToCatalog: "بازگشت به فهرست",
+      },
+      publisher: {
+        badge: "معرفی ناشر",
+        title: "ناشر: {{slug}}",
+        subtitle: "به‌زودی معرفی و مجموعه‌های ویژه این ناشر را نمایش می‌دهیم.",
+        placeholder: "به زودی صفحه ناشر شامل مجموعه‌های منتخب و آمار فعالیت خواهد بود.",
+        backToCatalog: "بازگشت به فهرست",
+      },
+      teacher: {
+        badge: "راهنمای منتات",
+        title: "مدرس شماره {{teacherId}}",
+        subtitle: "به‌زودی پرونده کامل مدرس را در اختیار می‌گذاریم.",
+        placeholder: "صفحه مدرس به زودی شامل سوابق، تخصص‌ها و جلسات آتی خواهد بود.",
+        backToCatalog: "بازگشت به فهرست",
+      },
+      profile: {
+        badge: "نمایه مسافر",
+        title: "نمایه شما در دیون‌تیوب",
+        subtitle: "به‌زودی امکانات شخصی‌سازی بیشتری اضافه می‌شود.",
+        placeholder: "در به‌روزرسانی‌های آینده، تاریخچه تماشا، نشان‌ها و آمار قبیله شما نمایش داده خواهد شد.",
       },
       footer: {
         rights: "تمام حقوق محفوظ است.",
+        terms: "قوانین سایت",
+        privacy: "حریم خصوصی",
       },
     },
   },
@@ -257,95 +439,128 @@ const resources = {
     translation: {
       layout: {
         tagline: "بث حكمة أراكيس",
+        tabTitle: "ديون تيوب | بث حكمة أراكيس",
       },
       nav: {
         home: "الرئيسية",
-        catalog: "الفهرس",
+        catalog: "دليل الدورات",
+      },
+      header: {
+        searchPlaceholder: "ابحث في ديون تيوب…",
+        searchSubmit: "تشغيل البحث",
+        searchClose: "إغلاق البحث",
+        searchOpen: "إظهار شريط البحث",
+        openSettings: "فتح الإعدادات السريعة",
+        openProfile: "الملف الشخصي أو تسجيل الدخول",
       },
       hero: {
-        badge: "دروس جديدة يومياً",
-        title: "ابث معرفة كوكب أراكيس",
+        badge: "دروس جديدة كل يوم",
+        title: "بث معرفة أراكيس",
         subtitle:
-          "اكتشف دروساً سينمائية من مقاتلي فريمَن، وموجهي البيني جيسرت، واستراتيجيي المنتات — مختارة لمتعلمي المستقبل.",
-        ctaCatalog: "تصفح الفهرس",
-        ctaHealth: "فحص صحة API",
+          "اكتشف دروساً سينمائية من مقاتلي الفوريمين ومعلمات البيني جزيريت واستراتيجيي المنتات، مصممة للمتعلمين الدائمين.",
+        ctaCatalog: "استعرض الدليل",
+        ctaHealth: "تحقق من صحة API",
         healthStatus: {
-          idle: "اضغط الزر للتحقق من جاهزية الـAPI.",
-          checking: "جارٍ فحص صحة الـAPI...",
-          ok: "الـAPI يعمل بشكل سليم.",
-          fail: "فشل فحص صحة الـAPI.",
+          idle: "اضغط زر الحالة للتأكد من جاهزية واجهة API.",
+          checking: "جاري فحص صحة API...",
+          ok: "الواجهة سليمة.",
+          fail: "فشل فحص صحة الواجهة.",
         },
         infocard: {
-          title: "إحصاءات المنتات",
-          subtitle: "القوائم المختارة تبقي الطاقم متيقظاً.",
+          title: "مؤشرات المنتات",
+          subtitle: "القوائم المنتقاة تبقي فريقك متيقظاً.",
           metricsTitle: "متعلمين من المجتمع",
-          learners: "مستكشف نشط",
-          caption: "مدعوم بتوابل المعرفة المشتركة.",
+          learners: "مستكشفون نشطون",
+          caption: "مدعومون بتبادل المعرفة.",
         },
       },
       home: {
         actions: {
-          viewCatalog: "فتح الفهرس",
+          viewCatalog: "عرض كل الدورات",
         },
         rails: {
-          featuredTitle: "مقترح لك",
-          featuredSubtitle: "دورات عالية القيمة موصى بها من المنتات.",
-          latestTitle: "الإضافات الأحدث",
-          latestSubtitle: "إصدارات جديدة من منشئي محتوى موثوقين في عالم ديون.",
+          featuredTitle: "مختارات لك",
+          featuredSubtitle: "دورات عالية القيمة يوصي بها المنتات.",
+          latestTitle: "أحدث الإصدارات",
+          latestSubtitle: "محتوى جديد من صنّاع موثوقين في عالم ديون.",
           error: "تعذر تحميل الدورات المميزة. حاول مرة أخرى.",
-          empty: "ستظهر الدورات هنا حالما ينشرها المدرسون.",
+          empty: "ستظهر الدورات هنا بمجرد نشرها.",
         },
       },
       catalog: {
-        title: "فهرس الدورات",
-        subtitle: "بيانات حية من واجهة DuneTube.",
+        title: "دليل الدورات",
+        subtitle: "بيانات مباشرة من واجهة ديون تيوب.",
         count: "{{count}} دورة جاهزة للبث.",
-        loading: "جارٍ تحميل الدورات...",
+        loading: "جاري تحميل الدورات...",
         error: "تعذر تحميل الدورات. حاول مرة أخرى.",
-        empty: "لا توجد دورات تطابق عوامل التصفية حالياً.",
-        searchPlaceholder: "ابحث حسب العنوان أو الناشر أو المعلّم أو الوسم…",
+        empty: "لا توجد دورات مطابقة لمرشحاتك.",
+        searchPlaceholder: "ابحث بالعنوان أو الناشر أو المدرّس أو الوسوم...",
         searchAction: "بحث",
         clear: "مسح",
-        sortLabel: "ترتيب",
+        sortLabel: "فرز",
         sortOptions: {
           newest: "الأحدث",
-          title: "العنوان · أ إلى ي",
-          priceAsc: "السعر · تصاعدي",
-          priceDesc: "السعر · تنازلي",
+          title: "العنوان أ-ي",
+          priceAsc: "السعر | من الأقل إلى الأعلى",
+          priceDesc: "السعر | من الأعلى إلى الأقل",
         },
-        reset: "إعادة ضبط المرشحات",
+        reset: "إعادة تعيين المرشحات",
         paginationStatus: "صفحة {{page}} من {{totalPages}}",
         prev: "السابق",
         next: "التالي",
-        teacherLabel: "يقدمه {{teacher}}",
+        teacherLabel: "المدرّس: {{teacher}}",
         teacherUnknown: "مدرّس غير معروف",
-        learners: "{{count}} متعلم مسجّل",
+        learners: "{{count}} متعلم",
         tags: "الوسوم",
         priceLabel: "الرسوم",
+        ctaPreview: "تشغيل مقدمة {{title}}",
+        publisherLink: "زيارة قناة {{publisher}}",
+        metadata: {
+          publishedAgo: "نُشر {{time}}",
+          viewComments: "التعليقات",
+          joinCourse: "الانضمام للدورة",
+          bookmark: "إضافة للمحفوظات",
+        },
       },
       course: {
         actions: {
-          backToCatalog: "عودة إلى الفهرس",
+          backToCatalog: "العودة إلى الدليل",
+          bookmark: "حفظ الدورة",
+          preview: "تشغيل المعاينة",
+        },
+        tabs: {
+          overview: "نظرة عامة",
+          lessons: "الدروس",
+          reviews: "المراجعات",
+        },
+        cta: {
+          join: "الانضمام للدورة",
+          watchFirst: "مشاهدة الدرس الأول",
         },
         errors: {
-          notFound: "الدورة غير موجودة.",
-          generic: "تعذر تحميل هذه الدورة. حاول مجدداً.",
+          notFound: "لم يتم العثور على الدورة.",
+          generic: "تعذر تحميل هذه الدورة. حاول مرة أخرى.",
         },
         meta: {
           price: "الرسوم: {{price}}",
           language: "اللغة: {{language}}",
           learners: "{{count}} متعلم",
-          rating: "التقييم: {{rating}} من ٥",
+          rating: "التقييم: {{rating}} من 5",
           publishedAt: "تاريخ النشر: {{date}}",
           teacher: "المدرّس: {{teacher}}",
           teacherUnknown: "مدرّس غير معروف",
           priceLabelShort: "الرسوم",
-          footer: "تتكيّف الأسعار مع تفضيلاتك للغة والعملة.",
+          publishedRelative: "نُشر {{time}}",
+          participants: "{{count}} متعلم",
+          footer: "يتم ضبط الأسعار بناءً على تفضيلاتك.",
+        },
+        overview: {
+          title: "عن الدورة",
         },
         lessons: {
           title: "خطة الدروس",
           count: "{{count}} درس",
-          empty: "سيتم عرض الدروس هنا قريباً.",
+          empty: "سيتم إضافة الدروس قريباً.",
           lessonLabel: "الدرس {{order}}",
           preview: "معاينة مجانية",
           watch: "مشاهدة الدرس",
@@ -354,27 +569,85 @@ const resources = {
           title: "مراجعات المتعلمين",
           count: "{{count}} مراجعة",
           empty: "لا توجد مراجعات بعد.",
-          rating: "التقييم: {{rating}} من ٥",
+          rating: "التقييم: {{rating}} من 5",
         },
       },
       languageSwitcher: {
         label: "اللغة",
+        current: "اللغة الحالية",
+        more: "لغات أخرى…",
+        modalTitle: "اختر لغتك",
+        modalSubtitle: "اختر اللغة التي تفضلها في ديون تيوب.",
       },
       preferences: {
         currency: "العملة",
         dateStyle: "تنسيق التاريخ",
+        calendar: "التقويم",
         dateStyles: {
           short: "قصير",
           medium: "متوسط",
           long: "طويل",
         },
+        calendarOptions: {
+          gregorian: "ميلادي",
+          jalali: "جلالي",
+          hijri: "هجري",
+        },
+      },
+      modals: {
+        common: {
+          close: "إغلاق",
+        },
+        login: {
+          title: "تسجيل الدخول أو إنشاء حساب",
+          subtitle: "احصل على قوائم حصرية واحتفظ بتقدمك.",
+          emailLabel: "البريد الإلكتروني",
+          passwordLabel: "كلمة المرور",
+          submit: "تسجيل الدخول",
+          continueHint: "يمكنك إكمال بياناتك لاحقاً.",
+          continueGuest: "الاستمرار كضيف",
+        },
+        settings: {
+          title: "الإعدادات السريعة",
+          subtitle: "اضبط تجربة ديون تيوب خلال ثوانٍ.",
+          signOut: "تسجيل الخروج",
+        },
+      },
+      watch: {
+        badge: "النقرة الذهبية",
+        title: "مشاهدة الدرس {{lessonId}}",
+        subtitle: "البث الكامل قادم قريباً. استمتع بالمعاينة ريثما نجهز التجربة.",
+        placeholder: "نحضّر تجربة المشاهدة. يمكنك حالياً استكشاف تفاصيل الدورة أو متابعة التصفح.",
+        backToCatalog: "العودة إلى الدليل",
+      },
+      publisher: {
+        badge: "قناة منشئ المحتوى",
+        title: "الناشر: {{slug}}",
+        subtitle: "سنضيف قريباً معلومات كاملة عن الناشر وقوائمه المختارة.",
+        placeholder: "ستعرض صفحة الناشر قريباً مجموعات منسقة وإحصاءات المشاركة.",
+        backToCatalog: "العودة إلى الدليل",
+      },
+      teacher: {
+        badge: "مدرب المنتات",
+        title: "المدرّس رقم {{teacherId}}",
+        subtitle: "ملف المدرّس التفصيلي سيظهر قريباً.",
+        placeholder: "نعمل على إعداد صفحات المدرّسين مع الخبرات والإنجازات والجلسات القادمة.",
+        backToCatalog: "العودة إلى الدليل",
+      },
+      profile: {
+        badge: "ملف المسافر",
+        title: "ملفك في ديون تيوب",
+        subtitle: "سنضيف المزيد من التخصيص قريباً.",
+        placeholder: "سنُظهر سجل المشاهدة والأوسمة وإحصاءات الفريق في التحديثات القادمة.",
       },
       footer: {
         rights: "جميع الحقوق محفوظة.",
+        terms: "شروط الاستخدام",
+        privacy: "سياسة الخصوصية",
       },
     },
   },
-};
+} satisfies Record<LanguageCode, { translation: Record<string, unknown> }>;
 
 const supportedLanguages: SupportedLanguage[] = [
   { code: "en", label: "English" },
@@ -384,24 +657,40 @@ const supportedLanguages: SupportedLanguage[] = [
 
 const rtlLanguages = new Set<LanguageCode>(["fa", "ar"]);
 
+const applyDocumentLanguage = (language: LanguageCode, options: { persist?: boolean } = {}) => {
+  if (typeof document !== "undefined") {
+    document.documentElement.lang = language;
+    document.documentElement.dir = rtlLanguages.has(language) ? "rtl" : "ltr";
+  }
+  if (options.persist && typeof window !== "undefined") {
+    window.localStorage.setItem(STORAGE_KEY, language);
+  }
+};
+
 const getInitialLanguage = (): LanguageCode => {
   if (typeof window === "undefined") {
     return "en";
   }
+
   const stored = window.localStorage.getItem(STORAGE_KEY) as LanguageCode | null;
   if (stored && supportedLanguages.some((lang) => lang.code === stored)) {
     return stored;
   }
+
   const browser = window.navigator.language?.slice(0, 2) as LanguageCode | undefined;
   if (browser && supportedLanguages.some((lang) => lang.code === browser)) {
     return browser;
   }
+
   return "en";
 };
 
+const initialLanguage = getInitialLanguage();
+applyDocumentLanguage(initialLanguage);
+
 i18n.use(initReactI18next).init({
   resources,
-  lng: getInitialLanguage(),
+  lng: initialLanguage,
   fallbackLng: "en",
   interpolation: {
     escapeValue: false,
@@ -409,13 +698,8 @@ i18n.use(initReactI18next).init({
 });
 
 i18n.on("languageChanged", (lng) => {
-  if (typeof window === "undefined") {
-    return;
-  }
-  const language = lng as LanguageCode;
-  window.localStorage.setItem(STORAGE_KEY, language);
-  document.documentElement.lang = language;
-  document.documentElement.dir = rtlLanguages.has(language) ? "rtl" : "ltr";
+  const language = (lng ?? "en") as LanguageCode;
+  applyDocumentLanguage(language, { persist: true });
 });
 
 export { supportedLanguages, rtlLanguages };
