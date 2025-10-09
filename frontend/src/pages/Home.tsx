@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from "react";
 
 import Header from "../components/Header";
 import CourseCard from "../components/CourseCard";
-import { listCourses } from "../lib/api";
 import type { Course } from "../types/course";
 
 const PAGE_SIZE = 50;
+const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000/api";
 
 const ShortsCarousel = () => (
   <section className="mx-auto max-w-7xl px-3 py-6 sm:px-6">
@@ -30,7 +30,13 @@ const Home = () => {
     const load = async () => {
       try {
         setLoading(true);
-        const payload = await listCourses({ page, page_size: PAGE_SIZE, ordering: "-created" });
+        const response = await fetch(
+          `${API_BASE}/courses/?page=${page}&page_size=${PAGE_SIZE}&ordering=-created`,
+        );
+        if (!response.ok) {
+          throw new Error(`Failed to load courses: ${response.status}`);
+        }
+        const payload = (await response.json()) as { results?: Course[]; next?: string | null };
         if (ignore) {
           return;
         }
@@ -38,10 +44,8 @@ const Home = () => {
         setItems((previous) => (page === 1 ? nextItems : [...previous, ...nextItems]));
         setHasMore(Boolean(payload?.next));
       } catch (error) {
-        if (!controller.signal.aborted) {
-          console.error("Failed to load home courses", error);
-          setHasMore(false);
-        }
+        console.error("Failed to load home courses", error);
+        setHasMore(false);
       } finally {
         if (!ignore) {
           setLoading(false);
