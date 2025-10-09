@@ -5,7 +5,7 @@ import CourseCard from "../components/CourseCard";
 import { listCourses } from "../lib/api";
 import type { Course } from "../types/course";
 
-const PAGE_SIZE = 24;
+const PAGE_SIZE = 50;
 
 const ShortsCarousel = () => (
   <section className="mx-auto max-w-7xl px-3 py-6 sm:px-6">
@@ -30,7 +30,7 @@ const Home = () => {
     const load = async () => {
       try {
         setLoading(true);
-        const payload = await listCourses({ page, page_size: PAGE_SIZE, ordering: "-created_at" });
+        const payload = await listCourses({ page, page_size: PAGE_SIZE, ordering: "-created" });
         if (ignore) {
           return;
         }
