@@ -143,7 +143,7 @@ Codex باید پس از اجرای هر بخش وضعیت را در این فا
 1. ویرایش `index.html` برای لینک فونت‌ها و `<title>Dunetube</title>`.
 2. تنظیم اصولی fallback و بارگذاری سریع فونت.
 3. **Commit:** `chore(ui): add fonts and update head metadata`
-4. تست دستی:
+**Status:** ?
    - خوانایی فونت‌ها.
    - نمایش صحیح عنوان و آیکون تب.
 
