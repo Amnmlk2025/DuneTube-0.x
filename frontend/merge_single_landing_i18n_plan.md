@@ -34,7 +34,7 @@
 4. در صورت تداخل، فقط یک Grid دوره‌ها نگه‌دار (بدون مرز، سفید).
 5. **Commit:** `feat(ui): merge catalog into single landing page`
 
-**وضعیت:** ⏳
+**وضعیت:** ✅ تکمیل شد (Hero + StatsBar + CoursesGrid در Home)
 
 ---
 

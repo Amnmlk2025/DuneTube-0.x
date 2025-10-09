@@ -1,33 +1,21 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
-import FiltersBar, { type FilterOption } from "../components/FiltersBar";
+import CoursesGrid from "../components/CoursesGrid";
 import CourseCard from "../components/CourseCard";
+import FiltersBar, { type FilterOption } from "../components/FiltersBar";
+import Hero from "../components/Hero";
+import StatsBar from "../components/StatsBar";
 import { listCourses } from "../lib/api";
 import type { Course } from "../types/course";
 import { formatRelativeTimeFromNow } from "../utils/intl";
 
-const topicFilters: FilterOption[] = [
-  { id: "all", label: "All" },
-  { id: "popular", label: "Popular" },
-  { id: "new", label: "New" },
-  { id: "mentat", label: "Mentat" },
-  { id: "fremen", label: "Fremen" },
-  { id: "strategy", label: "Strategy" },
-];
-
 const Home = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [shorts, setShorts] = useState<Course[]>([]);
   const [examPrep, setExamPrep] = useState<Course[]>([]);
-  const [feed, setFeed] = useState<Course[]>([]);
-  const [feedPage, setFeedPage] = useState<number>(1);
-  const [feedHasMore, setFeedHasMore] = useState<boolean>(true);
-  const [loadingFeed, setLoadingFeed] = useState<boolean>(false);
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let ignore = false;
@@ -54,95 +42,106 @@ const Home = () => {
     };
   }, []);
 
-  const loadFeedPage = useCallback(
-    async (page: number) => {
-      try {
-        setLoadingFeed(true);
-        const payload = await listCourses({
-          page,
-          page_size: 9,
-          ordering: activeFilter === "new" ? "-created_at" : undefined,
-        });
-        const results = payload.results ?? [];
-        setFeed((previous) => (page === 1 ? results : [...previous, ...results]));
-        setFeedHasMore(Boolean(payload.next));
-        setFeedPage(page);
-      } catch (error) {
-        console.error("Failed to load course feed", error);
-        setFeedHasMore(false);
-      } finally {
-        setLoadingFeed(false);
-      }
-    },
-    [activeFilter],
+  const filterOptions = useMemo<FilterOption[]>(
+    () => [
+      { id: "all", label: t("home.filters.all") },
+      { id: "popular", label: t("home.filters.popular") },
+      { id: "new", label: t("home.filters.new") },
+      { id: "mentat", label: t("home.filters.mentat") },
+      { id: "fremen", label: t("home.filters.fremen") },
+      { id: "strategy", label: t("home.filters.strategy") },
+    ],
+    [t],
   );
 
-  useEffect(() => {
-    void loadFeedPage(1);
-  }, [activeFilter, loadFeedPage]);
-
-  useEffect(() => {
-    if (!sentinelRef.current) {
-      return;
-    }
-
-    const element = sentinelRef.current;
-    observerRef.current?.disconnect();
-
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && !loadingFeed && feedHasMore) {
-          void loadFeedPage(feedPage + 1);
-        }
-      },
-      { rootMargin: "200px" },
-    );
-
-    observerRef.current.observe(element);
-
-    return () => {
-      observerRef.current?.disconnect();
-    };
-  }, [feedHasMore, feedPage, loadFeedPage, loadingFeed]);
-
   const activeLabel = useMemo(() => {
-    const found = topicFilters.find((filter) => filter.id === activeFilter);
+    const found = filterOptions.find((filter) => filter.id === activeFilter);
     return found?.label ?? activeFilter;
-  }, [activeFilter]);
+  }, [activeFilter, filterOptions]);
+
+  const filteredShorts = useMemo(() => {
+    if (activeFilter === "all") {
+      return shorts;
+    }
+    return shorts.filter((course) => course.tags?.includes(activeFilter));
+  }, [activeFilter, shorts]);
+
+  const filteredExamPrep = useMemo(() => {
+    if (activeFilter === "all") {
+      return examPrep;
+    }
+    return examPrep.filter((course) => course.tags?.includes(activeFilter));
+  }, [activeFilter, examPrep]);
+
+  const scrollToGrid = () => {
+    const element = document.querySelector("#courses-grid");
+    if (element instanceof HTMLElement) {
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-10 px-4 py-8 md:px-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-brand-deep md:text-3xl">
-          {t("home.title", { defaultValue: "Stream knowledge from Arrakis" })}
-        </h1>
-        <p className="mt-2 text-sm text-slate-600 md:text-base">
-          {t("home.subtitle", {
-            defaultValue: "Choose a topic to tailor the latest courses, shorts, and playlists to your interests.",
-          })}
-        </p>
-        <div className="mt-4">
-          <FiltersBar filters={topicFilters} activeFilter={activeFilter} onChange={setActiveFilter} />
-        </div>
-        <p className="mt-3 text-xs text-slate-500">
-          {t("home.filters.selected", {
-            defaultValue: "Currently viewing recommendations for:",
-          })}{" "}
-          <strong className="text-brand-deep">{activeLabel}</strong>
-        </p>
-      </header>
+    <div className="space-y-16 pb-16">
+      <Hero />
+      <StatsBar />
 
-      <section aria-labelledby="shorts-heading" className="space-y-3">
+      <section className="mx-auto w-full max-w-7xl space-y-4 px-4 md:px-6">
+        <header className="space-y-4 rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-lg backdrop-blur">
+          <div>
+            <h1 className="text-2xl font-semibold text-brand-deep md:text-3xl">
+              {t("home.title", { defaultValue: "Stream knowledge from Arrakis" })}
+            </h1>
+            <p className="mt-2 text-sm text-slate-600 md:text-base">
+              {t("home.subtitle", {
+                defaultValue: "Choose a topic to tailor the latest courses, shorts, and playlists to your interests.",
+              })}
+            </p>
+          </div>
+          <div className="flex flex-col gap-3">
+            <FiltersBar filters={filterOptions} activeFilter={activeFilter} onChange={setActiveFilter} />
+            <p className="text-xs text-slate-500">
+              {t("home.filters.selected", {
+                defaultValue: "Currently viewing recommendations for:",
+              })}{" "}
+              <strong className="text-brand-deep">{activeLabel}</strong>
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={scrollToGrid}
+              className="golden-click inline-flex items-center rounded-full bg-brand-gold px-6 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-white hover:bg-brand-gold/90"
+            >
+              {t("home.actions.viewCatalog")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveFilter("all")}
+              className="golden-click inline-flex items-center rounded-full border border-slate-200 px-6 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-600 transition hover:border-brand-gold hover:text-brand-gold"
+            >
+              {t("home.actions.resetFilters")}
+            </button>
+          </div>
+        </header>
+      </section>
+
+      <CoursesGrid key={activeFilter} />
+
+      <section aria-labelledby="shorts-heading" className="space-y-3 px-4 md:px-6">
         <div className="flex items-center justify-between">
           <h2 id="shorts-heading" className="text-lg font-semibold text-brand-deep">
             {t("home.rails.shortsTitle", { defaultValue: "Latest Shorts" })}
           </h2>
-          <Link to="/catalog" className="text-xs font-semibold text-brand-deep hover:text-brand-sand">
+          <button
+            type="button"
+            onClick={scrollToGrid}
+            className="text-xs font-semibold text-brand-deep transition hover:text-brand-sand"
+          >
             {t("home.actions.viewAll", { defaultValue: "View all" })}
-          </Link>
+          </button>
         </div>
         <div className="scroll-rail">
-          {shorts.map((course) => {
+          {filteredShorts.map((course) => {
             const timeAgo = formatRelativeTimeFromNow(course.published_at, i18n.language);
             return (
               <Link
@@ -163,7 +162,7 @@ const Home = () => {
         </div>
       </section>
 
-      <section aria-labelledby="feed-heading" className="space-y-4">
+      <section aria-labelledby="feed-heading" className="space-y-4 px-4 md:px-6">
         <div className="flex items-center justify-between">
           <h2 id="feed-heading" className="text-lg font-semibold text-brand-deep">
             {t("home.rails.feedTitle", { defaultValue: "Course Feed" })}
@@ -173,30 +172,27 @@ const Home = () => {
           </span>
         </div>
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {feed.map((course) => (
+          {filteredShorts.slice(0, 3).map((course) => (
             <CourseCard key={course.id} course={course} />
           ))}
         </div>
-        <div ref={sentinelRef} className="h-8">
-          {loadingFeed ? (
-            <div className="flex items-center justify-center text-xs text-slate-500">
-              {t("home.rails.loading", { defaultValue: "Loading…" })}
-            </div>
-          ) : null}
-        </div>
       </section>
 
-      <section aria-labelledby="exam-heading" className="space-y-3">
+      <section aria-labelledby="exam-heading" className="space-y-3 px-4 md:px-6">
         <div className="flex items-center justify-between">
           <h2 id="exam-heading" className="text-lg font-semibold text-brand-deep">
             {t("home.rails.examTitle", { defaultValue: "Exam Prep" })}
           </h2>
-          <Link to="/catalog" className="text-xs font-semibold text-brand-deep hover:text-brand-sand">
+          <button
+            type="button"
+            onClick={scrollToGrid}
+            className="text-xs font-semibold text-brand-deep transition hover:text-brand-sand"
+          >
             {t("home.actions.viewAll", { defaultValue: "View all" })}
-          </Link>
+          </button>
         </div>
         <div className="scroll-rail">
-          {examPrep.map((course) => (
+          {filteredExamPrep.map((course) => (
             <CourseCard key={course.id} course={course} layout="horizontal" />
           ))}
         </div>
