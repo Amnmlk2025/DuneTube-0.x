@@ -111,7 +111,7 @@ Codex باید پس از اجرای هر بخش وضعیت را در این فا
    (از `data-no-watch` برای جلوگیری از bubble روی آواتار/لینک‌ها استفاده شود.)
 2. تصویر 16:9، آواتار ناشر، عنوان bold و توضیح یک‌خطی با ellipsis.
 3. **Commit:** `feat(ui): borderless CourseCard with precise click behavior`
-4. تست دستی:
+**Status:** ?
    - عدم وجود بوردر و رفتار hover صحیح.
    - کلیک‌ها دقیقاً مطابق قانون طلایی.
 
