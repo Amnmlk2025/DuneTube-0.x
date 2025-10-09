@@ -58,7 +58,7 @@
 3. هر جایی از Header/Footers که لینکی به `/catalog` دارد را حذف یا به `/` تغییر بده.
 4. **Commit:** `chore(router): remove catalog route and redirect to /`
 
-**وضعیت:** ⏳
+**وضعیت:** ✅ ریدایرکت /catalog → / و حذف Route
 
 ---
 

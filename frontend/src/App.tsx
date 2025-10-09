@@ -1,10 +1,9 @@
 import { Suspense, useEffect } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import Header from "./components/Header";
 import { PreferencesProvider } from "./context/PreferencesContext";
-import Catalog from "./pages/Catalog";
 import CourseDetail from "./pages/CourseDetail";
 import Profile from "./pages/Profile";
 import PublisherProfile from "./pages/PublisherProfile";
@@ -26,12 +25,13 @@ const AppShell = () => {
         <Suspense fallback={<div className="py-20 text-center text-sm text-slate-500">{t("catalog.loading")}</div>}>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/catalog" element={<Catalog />} />
+            <Route path="/catalog" element={<Navigate to="/" replace />} />
             <Route path="/courses/:courseId" element={<CourseDetail />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/publishers/:publisherSlug" element={<PublisherProfile />} />
             <Route path="/teachers/:teacherId" element={<TeacherProfile />} />
             <Route path="/watch/:lessonId" element={<WatchLesson />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
       </main>
