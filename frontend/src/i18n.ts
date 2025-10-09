@@ -49,18 +49,51 @@ const resources = {
           learners: "active explorers",
           caption: "Powered by the spice of shared knowledge.",
         },
+        sidebar: {
+          title: "Need a quick start?",
+          help: "Scan the highlights, then jump into the catalog grid to filter by topic or mentor.",
+          tipLabel: "Pro tip",
+          tipBody: "Ping the API health before inviting your sietch to watch.",
+        },
       },
       home: {
+        title: "دفق معرفة أراكيس",
+        subtitle: "اختر موضوعاً لضبط أحدث الدورات والمقاطع وقوائم التشغيل بما يلائم اهتماماتك.",
         actions: {
-          viewCatalog: "Open catalog",
+          viewCatalog: "فتح الدليل",
+          resetFilters: "إعادة تعيين المرشحات",
+          viewAll: "عرض الكل",
+        },
+        filters: {
+          all: "كل المواضيع",
+          popular: "شائع",
+          new: "الأحدث",
+          mentat: "منتات",
+          fremen: "فرمن",
+          strategy: "استراتيجية",
+          selected: "نعرض لك التوصيات الخاصة بـ:",
+        },
+        stats: {
+          learners: {
+            value: "٨٥ألف+",
+            label: "متعلمين في أرجاء الإمبراطورية",
+          },
+          courses: {
+            value: "١٫٢ألف",
+            label: "دورات غامرة",
+          },
+          languages: {
+            value: "١٢",
+            label: "لغات للترجمة",
+          },
         },
         rails: {
-          featuredTitle: "Featured for you",
-          featuredSubtitle: "High-signal courses recommended by Mentat curators.",
-          latestTitle: "Latest arrivals",
-          latestSubtitle: "Fresh drops from trusted creators across the Dune universe.",
-          error: "We could not load spotlight courses. Please try again.",
-          empty: "Courses will appear here once instructors publish them.",
+          featuredTitle: "مختارات لأجلك",
+          featuredSubtitle: "دورات عالية القيمة يرشحها مشرفو المنتات.",
+          latestTitle: "أحدث الإصدارات",
+          latestSubtitle: "إصدارات جديدة من صناع موثوقين في عالم ديون.",
+          error: "تعذر تحميل الدورات المميزة. حاول مرة أخرى.",
+          empty: "ستظهر الدورات هنا حالما ينشرها المدرسون.",
         },
       },
       catalog: {
@@ -242,29 +275,62 @@ const resources = {
         openProfile: "نمایه یا ورود",
       },
       hero: {
-        badge: "دوره‌های جدید هر روز",
-        title: "دانش آراکیس را استریم کن",
+        badge: "دروس جديدة كل يوم",
+        title: "دفق معرفة أراكيس",
         subtitle:
-          "درس‌های سینمایی از بازماندگان فرمن، مربیان بنی‌جزریت و استراتژیست‌های منتات؛ مخصوص یادگیرندگان حرفه‌ای.",
-        ctaCatalog: "مشاهده فهرست",
-        ctaHealth: "بررسی سلامت API",
+          "دروس سينمائية من الناجين الفرمن، ومرشدات البِنِي جسرِت، واستراتيجيي المنتات لعشاق التعلم المستمر.",
+        ctaCatalog: "استعراض الدليل",
+        ctaHealth: "تحقق من صحة الـAPI",
         healthStatus: {
-          idle: "برای اطمینان از آماده بودن API دکمه سلامت را بزنید.",
-          checking: "در حال بررسی سلامت API...",
-          ok: "API سالم است.",
-          fail: "بررسی سلامت API ناموفق بود.",
+          idle: "اضغط زر الصحة للتأكد من جاهزية الـAPI.",
+          checking: "جاري فحص صحة الـAPI...",
+          ok: "الـAPI يعمل بصحة جيدة.",
+          fail: "فشل فحص صحة الـAPI.",
         },
         infocard: {
-          title: "شاخص‌های منتات",
-          subtitle: "لیست‌های منتخب، گروه شما را هوشیار نگه می‌دارد.",
-          metricsTitle: "یادگیرندگان جامعه",
-          learners: "کاوشگر فعال",
-          caption: "با ادویه دانش مشترک نیرو می‌گیریم.",
+          title: "قياسات المنتات",
+          subtitle: "القوائم المختارة تُبقي جماعتك يقظة.",
+          metricsTitle: "متعلمين من المجتمع",
+          learners: "مستكشفون نشطون",
+          caption: "قوة المعرفة المشتركة المدعومة بالتوابل.",
+        },
+        sidebar: {
+          title: "تحتاج بداية سريعة؟",
+          help: "اطلع على اللمحات البارزة ثم انتقل إلى شبكة الدورات لتفلتر حسب الموضوع أو المدرب.",
+          tipLabel: "نصيحة محترف",
+          tipBody: "تحقق من صحة الـAPI قبل دعوة السيتش حتى تُحمّل البيانات فوراً.",
         },
       },
       home: {
+        title: "جریان دانش آراکیس را استریم کن",
+        subtitle: "موضوعی را انتخاب کن تا جدیدترین دوره‌ها، شورت‌ها و پلی‌لیست‌ها بر اساس علاقه‌ات چیده شوند.",
         actions: {
           viewCatalog: "مشاهده فهرست دوره‌ها",
+          resetFilters: "بازنشانی فیلترها",
+          viewAll: "مشاهده همه",
+        },
+        filters: {
+          all: "همه موضوع‌ها",
+          popular: "محبوب",
+          new: "تازه‌ها",
+          mentat: "منتات",
+          fremen: "فرمن",
+          strategy: "استراتژی",
+          selected: "در حال نمایش پیشنهادها برای:",
+        },
+        stats: {
+          learners: {
+            value: "۸۵هزار+",
+            label: "یادگیرنده‌ی فعال در سراسر امپراتوری",
+          },
+          courses: {
+            value: "۱٫۲هزار",
+            label: "دوره‌ی تعاملی",
+          },
+          languages: {
+            value: "۱۲",
+            label: "زبان زیرنویس",
+          },
         },
         rails: {
           featuredTitle: "گزیده مخصوص شما",
@@ -669,7 +735,7 @@ const applyDocumentLanguage = (language: LanguageCode, options: { persist?: bool
 
 const getInitialLanguage = (): LanguageCode => {
   if (typeof window === "undefined") {
-    return "en";
+    return "fa";
   }
 
   const stored = window.localStorage.getItem(STORAGE_KEY) as LanguageCode | null;
@@ -682,16 +748,16 @@ const getInitialLanguage = (): LanguageCode => {
     return browser;
   }
 
-  return "en";
+  return "fa";
 };
 
 const initialLanguage = getInitialLanguage();
-applyDocumentLanguage(initialLanguage);
+applyDocumentLanguage(initialLanguage, { persist: true });
 
 i18n.use(initReactI18next).init({
   resources,
   lng: initialLanguage,
-  fallbackLng: "en",
+  fallbackLng: "fa",
   interpolation: {
     escapeValue: false,
   },

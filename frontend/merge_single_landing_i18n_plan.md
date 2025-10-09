@@ -91,7 +91,7 @@
 5. **فونت و راست‌چین:** اطمینان از اعمال `text-right` و کلاس‌های RTL در سکشن‌های متنی (در صورت نیاز).
 6. **Commit:** `fix(i18n): enforce FA as default with RTL and translate Home`
 
-**وضعیت:** ⏳
+**وضعیت:** ✅ زبان پیش‌فرض فارسی + i18n/RTL تکمیل
 
 ---
 

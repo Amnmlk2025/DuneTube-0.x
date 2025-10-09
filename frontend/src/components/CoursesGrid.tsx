@@ -166,8 +166,8 @@ const CoursesGrid = ({ initialQuery = "", initialOrdering = "-created_at" }: Cou
     <section id="courses-grid" className="mx-auto mt-16 w-full max-w-7xl space-y-8 px-4 md:px-6">
       <header className="flex flex-col gap-6 rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-lg backdrop-blur">
         <div className="flex flex-col gap-2 text-start">
-          <h2 className="text-xl font-semibold text-brand-deep md:text-2xl">{t("catalog.heading")}</h2>
-          <p className="text-sm text-slate-600 md:text-base">{t("catalog.description")}</p>
+          <h2 className="text-xl font-semibold text-brand-deep md:text-2xl">{t("catalog.title")}</h2>
+          <p className="text-sm text-slate-600 md:text-base">{t("catalog.subtitle")}</p>
           {countLabel ? <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{countLabel}</p> : null}
         </div>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
