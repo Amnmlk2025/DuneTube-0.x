@@ -3,7 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { PreferencesProvider } from "./context/PreferencesContext";
 import Home from "./pages/Home";
 
-const App = () => {
+export default function App() {
   return (
     <PreferencesProvider>
       <Routes>
@@ -13,6 +13,4 @@ const App = () => {
       </Routes>
     </PreferencesProvider>
   );
-};
-
-export default App;
+}
