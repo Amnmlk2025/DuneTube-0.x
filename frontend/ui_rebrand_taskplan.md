@@ -128,7 +128,7 @@ Codex باید پس از اجرای هر بخش وضعیت را در این فا
    - Exams rail (اسکرول افقی)
    - Infinite scroll با IntersectionObserver
 2. **Commit:** `feat(ui): youtube-like Home with rails and infinite scroll`
-3. تست دستی:
+**Status:** ?
    - بارگذاری تدریجی صفحات دوره‌ها.
    - روان بودن اسکرول و پیمایش افقی ریل‌ها.
    - حفظ پس‌زمینه سفید کل صفحه.
