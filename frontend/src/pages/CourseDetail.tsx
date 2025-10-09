@@ -165,7 +165,7 @@ const CourseDetail = () => {
         <div className="space-y-6 rounded-3xl border border-rose-200 bg-rose-50 p-6 text-slate-600">
           <p>{errorMessage}</p>
           <Link
-            to="/catalog"
+            to="/"
             className="golden-click inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-gold transition hover:border-brand-gold hover:bg-brand-gold/10"
           >
             {t("course.actions.backToCatalog")}

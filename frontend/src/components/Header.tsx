@@ -1,6 +1,6 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import logo from "../assets/dunetube-logo.svg";
 import { supportedLanguages, type LanguageCode } from "../i18n";
@@ -9,6 +9,7 @@ const primaryLanguages = supportedLanguages.filter((lang) => lang.code === "fa" 
 
 const Header = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { i18n, t } = useTranslation();
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -24,10 +25,26 @@ const Header = () => {
     return () => window.clearTimeout(timeout);
   }, [searchOpen]);
 
+  const navigateToCatalog = (search?: string) => {
+    const normalized = search?.trim() ?? "";
+    const searchPart = normalized ? `?search=${encodeURIComponent(normalized)}` : "";
+    const isAlreadyTarget = location.pathname === "/" && location.search === searchPart;
+    if (!isAlreadyTarget) {
+      navigate({ pathname: "/", search: searchPart });
+    }
+    window.setTimeout(() => {
+      const element = document.querySelector("#courses-grid");
+      if (element instanceof HTMLElement) {
+        element.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 150);
+  };
+
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const query = searchValue.trim();
-    navigate(query.length > 0 ? `/catalog?search=${encodeURIComponent(query)}` : "/catalog");
+    navigateToCatalog(query);
+    setSearchValue("");
     setSearchOpen(false);
   };
 
@@ -47,17 +64,16 @@ const Header = () => {
             <span className="hidden text-lg font-semibold text-brand-deep sm:inline">{t("layout.brandName", { defaultValue: "DuneTube" })}</span>
           </Link>
           <nav className="hidden items-center gap-3 md:flex">
-            <NavLink
-              to="/catalog"
-              className={({ isActive }) =>
-                [
-                  "rounded-full px-3 py-1.5 text-sm font-medium transition",
-                  isActive ? "bg-brand-sand text-brand-deep shadow-card" : "text-slate-600 hover:text-brand-deep",
-                ].join(" ")
-              }
+            <button
+              type="button"
+              onClick={() => navigateToCatalog()}
+              className={[
+                "rounded-full px-3 py-1.5 text-sm font-medium transition",
+                location.pathname === "/" ? "bg-brand-sand text-brand-deep shadow-card" : "text-slate-600 hover:text-brand-deep",
+              ].join(" ")}
             >
               {t("nav.catalog")}
-            </NavLink>
+            </button>
           </nav>
         </div>
 
@@ -87,7 +103,10 @@ const Header = () => {
               </button>
               <button
                 type="button"
-                onClick={() => setSearchOpen(false)}
+              onClick={() => {
+                setSearchOpen(false);
+                setSearchValue("");
+              }}
                 aria-label={t("header.searchClose")}
                 className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100"
               >
@@ -97,7 +116,10 @@ const Header = () => {
           ) : (
             <button
               type="button"
-              onClick={() => setSearchOpen(true)}
+              onClick={() => {
+                setSearchValue("");
+                setSearchOpen(true);
+              }}
               aria-label={t("header.searchOpen")}
               className="inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100"
             >
@@ -148,7 +170,7 @@ const Header = () => {
             aria-label={t("header.openProfile")}
             className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-brand-sand text-brand-deep font-semibold transition hover:bg-brand-sand/80"
           >
-            {i18n.language.startsWith("fa") ? "FA" : "EN"}
+            {i18n.language.slice(0, 2).toUpperCase()}
           </button>
         </div>
       </div>

@@ -104,7 +104,7 @@
 3. بررسی header برای حذف «فهرست دوره‌ها» اگر اضافه است.
 4. **Commit:** `chore(ui): clean unused imports and links after merge`
 
-**وضعیت:** ⏳
+**وضعیت:** ✅ لینک‌ها پاک‌سازی و فایل Catalog حذف شد
 
 ---
 

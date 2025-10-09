@@ -4,9 +4,8 @@ import App from '../App'
 import { render } from './test-utils'
 
 describe('routing', () => {
-  it('renders at /catalog without crash', () => {
-    const ui = render(<App />, { })
-    // وجود ریشه‌ی اپ کافی است
+  it('renders landing page without crash', () => {
+    const ui = render(<App />)
     expect(ui.container.innerHTML.length).toBeGreaterThan(0)
   })
 })

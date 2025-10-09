@@ -20,7 +20,7 @@ const WatchLesson = () => {
       <div className="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
         <p>{t("watch.placeholder")}</p>
         <Link
-          to="/catalog"
+          to="/"
           className="golden-click inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-gold transition hover:border-brand-gold hover:bg-brand-gold/10"
         >
           {t("watch.backToCatalog")}
