@@ -2,7 +2,6 @@ import { type FormEvent, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
-import logo from "../assets/dunetube-logo.svg";
 import { supportedLanguages, type LanguageCode } from "../i18n";
 
 const primaryLanguages = supportedLanguages.filter((lang) => lang.code === "fa" || lang.code === "en");
@@ -56,28 +55,29 @@ const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 md:px-6">
-        <div className="flex items-center gap-3">
-          <Link to="/" className="flex items-center gap-2">
-            <img src={logo} alt="DuneTube" className="h-9 w-auto" />
-            <span className="hidden text-lg font-semibold text-brand-deep sm:inline">{t("layout.brandName", { defaultValue: "DuneTube" })}</span>
-          </Link>
-          <nav className="hidden items-center gap-3 md:flex">
-            <button
-              type="button"
-              onClick={() => navigateToCatalog()}
-              className={[
-                "rounded-full px-3 py-1.5 text-sm font-medium transition",
-                location.pathname === "/" ? "bg-brand-sand text-brand-deep shadow-card" : "text-slate-600 hover:text-brand-deep",
-              ].join(" ")}
-            >
-              {t("nav.catalog")}
-            </button>
-          </nav>
-        </div>
+    <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/90 backdrop-blur">
+      <div dir="ltr" className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-3 sm:px-6">
+        <Link to="/" className="flex items-center gap-2">
+          <div className="h-6 w-9 overflow-hidden rounded-lg ring-1 ring-slate-200">
+            <div className="h-2/3 w-full bg-brand-deep" />
+            <div className="h-1/3 w-full bg-brand-sand" />
+          </div>
+          <span dir="auto" className="font-semibold tracking-tight">
+            Dunetube
+          </span>
+        </Link>
+        <button
+          type="button"
+          onClick={() => navigateToCatalog()}
+          className={[
+            "hidden rounded-full px-3 py-1.5 text-sm font-medium transition md:inline-flex",
+            location.pathname === "/" ? "bg-brand-sand text-brand-deep shadow-card" : "text-slate-600 hover:text-brand-deep",
+          ].join(" ")}
+        >
+          {t("nav.catalog")}
+        </button>
 
-        <div className="flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-2">
           {searchOpen ? (
             <form
               onSubmit={handleSearchSubmit}
