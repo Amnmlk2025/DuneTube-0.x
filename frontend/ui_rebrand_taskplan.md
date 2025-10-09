@@ -164,7 +164,7 @@ Codex باید پس از اجرای هر بخش وضعیت را در این فا
 - [ ] Lighthouse ≥ 90 برای Home (Performance/Accessibility)
 
 **Commit:** `test(ui): pass QA checklist for brand-compliant home`
-
+**Status:** ?
 **وضعیت:** ⏳
 
 ---
