@@ -6,10 +6,10 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          deep: "#0A355C",
-          sand: "#E8DCC8",
-          sky: "#6EC9E8",
-          olive: "#A4A169",
+          deep: "#0A355C", // Deep Blue (main)
+          sand: "#E8DCC8", // Base Sand (calm, neutral)
+          sandAcc: "#D6C3A1", // Accent Sand (hover/secondary)
+          sky: "#6EC9E8", // Optional highlight
         },
       },
       borderRadius: {
