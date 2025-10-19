@@ -10,7 +10,7 @@ from lessons.models import Lesson
 @pytest.mark.django_db
 def test_health_endpoint():
     client = APIClient()
-    response = client.get("/healthz")
+    response = client.get("/api/healthz/")
     assert response.status_code == 200
     assert response.json() == {"ok": True, "service": "dunetube-api"}
 

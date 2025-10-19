@@ -6,6 +6,7 @@
     "bot": "node .github/mybot.js"
   },
   "dependencies": {
-    "openai": "^4.0.0"
+    "openai": "^4.0.0",
+    "react-router-dom": "^7.9.4"
   }
 }

@@ -1,0 +1,203 @@
+# =========================================================
+# Dunetube — SAFE EXECUTION PLAN (No direct frontend writes)
+# Date: 2025-10-19
+# =========================================================
+
+[HARD_RULES]
+- DO NOT MODIFY frontend source files directly.
+- Any frontend change MUST be produced as a proposal (diff/patch or .proposal.tsx) for human review.
+- You MAY write code directly ONLY in /backend/** and /infra/** and /docs/** and /scripts/**.
+- For frontend proposals, save under: docs/codex_proposals/frontend/
+- For reports/logs, save under: docs/codex_reports/
+[/HARD_RULES]
+
+[PROTECTED_PATHS]
+# Entire frontend is protected from direct writes.
+frontend/**
+[/PROTECTED_PATHS]
+
+[WRITE_ALLOWED]
+# Allowed write scopes (non-frontend)
+backend/**
+infra/**
+docs/**
+scripts/**
+# Exception for proposal artifacts (text/patch/new files) only:
+docs/codex_proposals/frontend/**
+docs/codex_reports/**
+.vscode/settings.json
+[/WRITE_ALLOWED]
+
+[PROPOSAL_FORMAT]
+- For edits to existing frontend files: produce unified diff files (*.patch) with file-relative paths.
+  Save here: docs/codex_proposals/frontend/STEP_##__<file>.patch
+- For new frontend files/components: create *.proposal.tsx files with this header:
+  /**
+   * PROPOSAL ONLY — NOT APPLIED
+   * Highlight: new code suggested for review.
+   * Notes: explain purpose + where to mount after approval.
+   */
+  // TODO[REVIEW]: This file is a proposal. Do not import until approved.
+  ( … code … )
+  Save here: docs/codex_proposals/frontend/STEP_##__<path>.proposal.tsx
+- Inside JSX of proposals, mark review blocks with comments:
+  {/* REVIEW: proposed block (orange) */}
+  (رنگ واقعی در کد ممکن نیست؛ از کامنت برای تمایز استفاده کن)
+[/PROPOSAL_FORMAT]
+
+[REPORTING]
+- At the end of EACH step, append to a single markdown report:
+  docs/codex_reports/2025-10-19_codex_report.md
+- Report must include:
+  1) Step ID & title
+  2) Summary of analysis
+  3) List of proposal files created (with relative paths)
+  4) Checklist for human approval (markdown checkboxes)
+  5) Next-step suggestion
+[/REPORTING]
+
+[VS_CODE_SAFEGUARD]
+- Create or merge into .vscode/settings.json:
+  {
+    "files.readonlyInclude": { "frontend/**": true },
+    "codex.previewOnly": true,
+    "codex.requireConfirmation": true,
+    "codex.maxChangesPerRun": 30
+  }
+- If actual setting keys differ, note detected keys in the report; do not guess.
+[/VS_CODE_SAFEGUARD]
+
+
+# =========================================================
+# CHUNKED RUN PLAN (small steps to avoid token limits)
+# =========================================================
+
+[RUN_CHUNK_01] Title: Workspace audit & guardrails
+Tasks:
+- Scan repo structure; confirm frontend/backend/infra/docs presence.
+- Install guardrails: update .vscode/settings.json per [VS_CODE_SAFEGUARD].
+- Create report skeleton: docs/codex_reports/2025-10-19_codex_report.md
+Deliverables:
+- settings.json updated (merge-safe)
+- report created with “Step 01” section
+
+[RUN_CHUNK_02] Title: Frontend delta analysis (NO writes)
+Tasks:
+- Diff current frontend/ against last commit; detect any drift.
+- WITHOUT touching frontend, produce a “plan.md” describing potential fixes/enhancements needed for MVP alignment (Studio only).
+- Save plan as: docs/codex_proposals/frontend/STEP_02__plan.md
+Deliverables:
+- plan.md with bullets of proposed changes (no code yet)
+- report updated (Step 02)
+
+[RUN_CHUNK_03] Title: Frontend proposals — Studio fixes (batch A)
+Scope:
+- ONLY Studio pages or related layout/helpers.
+- DO NOT write to frontend. Produce proposals per [PROPOSAL_FORMAT].
+Targets (sample):
+- Fix minor Studio UX (toasts/confirm/migration modal text, null checks)
+- Optional small accessibility tweaks
+Deliverables:
+- *.patch and/or *.proposal.tsx files under docs/codex_proposals/frontend/
+- report updated (Step 03) + checklist
+
+[RUN_CHUNK_04] Title: Frontend proposals — Studio enhancements (batch B)
+Scope:
+- Propose new minor components (e.g., SmallBadge, EmptyState, LoadingSkeleton)
+- DO NOT import/mount; just propose files and explain where they would be mounted if approved
+Deliverables:
+- proposals saved
+- report updated (Step 04)
+
+[RUN_CHUNK_05] Title: Backend skeleton (safe to write)
+Tasks (allowed direct writes):
+- Create /backend services scaffolding (if not present): Django/DRF project with apps:
+  • courses (Course, Lesson, Attachment, MigrationOffer models + serializers + viewsets)
+  • auth (JWT endpoints if not present)
+- Docker compose (if infra desired): infra/docker-compose.yml with api + db(Postgres) + storage(MinIO) + nginx
+- Minimal README for backend run
+Deliverables:
+- backend/** code added
+- infra/** (optional) added
+- report updated (Step 05) with endpoints list
+
+[RUN_CHUNK_06] Title: Mock integration notes
+Tasks:
+- Describe how frontend would call backend endpoints (no code change in frontend).
+- Produce “integration.md” under docs/codex_proposals/frontend/ explaining endpoints, request/response, and where to connect in Studio files.
+Deliverables:
+- docs/codex_proposals/frontend/STEP_06__integration.md
+- report updated (Step 06)
+
+[RUN_CHUNK_07] Title: Sanity checks & summary
+Tasks:
+- Validate repo builds: backend dev server instructions, any env samples
+- Summarize all proposals pending approval
+Deliverables:
+- report updated (Step 07) + final checklist (per-file approvals)
+
+# =========================================================
+# ACCEPTANCE GATE
+# =========================================================
+[ACCEPTANCE]
+- No direct writes in frontend/**
+- All proposed frontend changes live under docs/codex_proposals/frontend/**
+- A single consolidated report at docs/codex_reports/2025-10-19_codex_report.md with per-step sections
+- Backend/infra changes (if any) compile or have clear run instructions
+[/ACCEPTANCE]
+# =========================================================
+# STEP 03 — Studio Fix Batch A (Proposal-Only)
+# =========================================================
+# Mode: proposal-only (no writes in frontend/)
+# Reference: AGENTS.md §7 → Step 03
+# Based on report docs/codex_proposals/frontend/STEP_02__plan.md
+# =========================================================
+
+[RUN_STEP_03]
+Title: Studio Fix Batch A
+Mode: Proposal-only
+Allowed writes: docs/codex_proposals/frontend/**, docs/codex_reports/**
+Protected: frontend/**
+
+Tasks:
+1. For each issue listed in STEP 02 delta analysis, create a **proposal patch** or **proposal file** (do not write into src/ directly):
+
+   a. **StudioLayout.tsx**
+      - Guard `window` usage → wrap in `useEffect` or conditional check `(typeof window !== "undefined")`.
+      - Default sidebar open on `lg:` breakpoints; add focus-trap when mobile overlay open.
+      - Improve ARIA labels and keyboard accessibility.
+
+   b. **StudioCourses.tsx**
+      - Replace mojibake strings like `"Search???", "»"` with proper copy: `"Search…"`, `"→"`, etc.
+      - Use icon components (lucide-react if available) instead of ASCII arrows.
+
+   c. **CourseEditor.tsx**
+      - Move `createDraftLike()` and navigation side effects into a guarded `useEffect`.
+      - Debounce `setField()` persistence to localStorage.
+      - Add null-check around `getCourse(id)` → show toast and redirect `/studio` if missing.
+
+   d. **_studioStore.ts**
+      - Add comment header explaining future migration to backend (`/api/courses/`, `/api/lessons/`).
+      - No functional change; documentation only.
+
+2. Each change becomes a `.patch` file stored at:
+docs/codex_proposals/frontend/STEP_03__<relative-path>.patch
+
+markdown
+Copy code
+
+3. Each patch must include unified diff headers (`--- a/...`, `+++ b/...`) so humans can apply later.
+
+4. Update global report:
+- File: `docs/codex_reports/2025-10-19_codex_report.md`
+- Add a new section **"Step 03 — Studio Fix Batch A"**
+- For each proposal:
+  - File path
+  - Short description
+  - `[ ] Approve` checkbox
+
+Deliverables:
+- One `.patch` file per edited Studio source (expected 4 – 5 files).
+- Updated markdown report with checklist.
+- No modifications in frontend/src.
+[/RUN_STEP_03]
