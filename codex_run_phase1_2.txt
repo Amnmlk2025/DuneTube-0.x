@@ -1,114 +1,211 @@
---approval-policy never
-auto_continue = true
-auto_continue_delay = 3
-RUN PLAN v1 — DuneTube Phase 1/2
+# =============================================================
+# Dunetube — Phase 1/2 Execution Plan for Codex
+# =============================================================
+# Version: 2025-10
+# Author: Code Master + Amin (via ChatGPT)
+# Purpose:
+#   Define tasks and constraints for Codex automation of the
+#   Dunetube project (frontend cleanup, studio MVP build, and
+#   verification of phase 1/2 deliverables).
+# =============================================================
 
-SCOPE
-- Implement homepage like YouTube, course cards, carousels (short videos & tests), infinite scroll with interleaving, RTL/i18n (fa/en/ar), brand tokens (deep blue + sand, no green), login/signup modal, proper header actions, catalog grid with pagination, course detail (lessons/reviews), and “golden click” video behavior as specified below.
 
-BATCH POLICY
-- Max 10 files and 1000 changed lines per batch.
-- After each batch: (1) print compact changelog (path + ±lines), (2) update checkpoint JSON, (3) STOP.
+[PROJECT_INFO]
+Name: Dunetube
+Type: Fullstack Learning Platform (YouTube-like)
+Structure: Monorepo
+Folders: /frontend, /backend, /infra, /docs
+Frontend: React + Vite + Tailwind + TypeScript
+Backend: Django REST Framework (SQLite → Postgres ready)
+Auth: JWT via /api/token & /api/token/refresh
+Media: Upload up to 500MB (videos, thumbnails)
+Frontend Dev Server: npm run dev
+Backend Dev Server: python manage.py runserver
+[/PROJECT_INFO]
 
-CHECKPOINT (for resume)
-- File: .codexprogress/phase1_2.json
-- Shape:
-  {
-    "version": 1,
-    "steps": [
-      {"id":"tokens_config","title":"Brand tokens & Tailwind","done":false},
-      {"id":"i18n_rtl","title":"i18n (fa/en/ar) + RTL","done":false},
-      {"id":"routes_layout","title":"Header, footer, routes","done":false},
-      {"id":"filters_row","title":"Homepage filters logic","done":false},
-      {"id":"shorts_carousel","title":"Short videos carousel","done":false},
-      {"id":"tests_carousel","title":"Tests carousel","done":false},
-      {"id":"infinite_mix","title":"Infinite scroll + interleave","done":false},
-      {"id":"course_card","title":"YouTube-like CourseCard","done":false},
-      {"id":"catalog_grid","title":"Catalog grid + pagination","done":false},
-      {"id":"course_detail","title":"Course detail (lessons/reviews)","done":false},
-      {"id":"golden_click","title":"Golden click behavior","done":false},
-      {"id":"health_button","title":"Home health button","done":false},
-      {"id":"finalize_script","title":"Write scripts/finalize-dev.ps1","done":false}
-    ],
-    "last_batch_index": 0
-  }
-- On start: create the file if missing; continue at first step with done=false.
-- On partial progress (token/time limits): finish current file safely, save, tick what’s done, update last_batch_index, STOP. Next run resumes.
 
-OUTPUT (each batch)
-- Print:
-  [BATCH n] Changed files:
-    - path/to/file (+X/-Y)
-  Next step: <id> or DONE
-  Checkpoint: .codexprogress/phase1_2.json
+[GOALS_PHASE1_2]
+1. Clean and stabilize frontend structure.
+2. Keep only verified MVP pages.
+3. Finalize Teacher Studio (UI/UX + routing + state + mock data).
+4. Prepare backend integration points.
+5. Ensure dev server runs cleanly without TypeScript or runtime errors.
+[/GOALS_PHASE1_2]
 
-FILES (typical touchpoints; adjust per spec)
-- frontend/tailwind.config.js
-- frontend/src/index.css (or styles/globals.css)
-- frontend/src/i18n.ts
-- frontend/src/App.tsx
-- frontend/src/components/{CourseCard.tsx,LanguageSwitcher.tsx}
-- frontend/src/pages/{Home.tsx,Catalog.tsx,CourseDetail.tsx}
-- frontend/src/lib/api.ts
-- backend/api/{urls.py,views.py}  (health at /api/healthz/)
-- pm2.config.json
-- scripts/finalize-dev.ps1  (append-only; do not execute here)
 
-TEST PLAN (quick)
-- GET /api/healthz → 200, { ok: true }
-- Home: health button turns green on success; filters row works; carousels render; infinite scroll interleaves blocks.
-- Catalog: grid loads with pagination.
-- CourseCard: click image → if lessons exist for same course, navigate /watch/:firstLessonId; else /course/:id.
-- CourseDetail: lessons ordered; reviews list present.
-- i18n: switching fa/ar sets RTL and translates menus and menu contents.
-- Brand: deep blue primary (#0A355C) + sand (#E8DCC8); no green; fonts like YouTube (Poppins / Vazirmatn acceptable).
+# =============================================================
+#  FRONTEND CLEANUP AND STRUCTURE
+# =============================================================
 
-FINALIZATION
-- Append idempotent commands to scripts/finalize-dev.ps1 (backend venv/pip/migrate, frontend npm install if needed, ensure frontend/.env with VITE_API_BASE, pm2 start/restart & save). Do not execute.
-- At the very end print exactly:
-### READY — RUN scripts/finalize-dev.ps1 ONCE
+[CLEANUP_FRONTEND_WHITELIST]
+Keep ONLY these frontend files; delete the rest (files or dirs) if not listed.
 
-──────────────────────────────────────────────────────────────────────────────
-[USER_SPEC_FA]  (بدون تفسیر، متن شما)
-صفحه لندینگ باید مثل یوتیوب باشد با مشخصات زیر:
+frontend/package.json
+frontend/tsconfig.json
+frontend/vite.config.ts
+frontend/tailwind.config.js
+frontend/postcss.config.js
+frontend/index.html
+frontend/src/main.tsx
+frontend/src/index.css
+frontend/src/App.tsx
 
-در هدر لوگوی باشد که هر وقت روی آن زده شد به صفحه لندینگ هدایت شود
-یک آیکون ذره بین در هدر باشد که هر وقت روی آن زده شد یک خط جستجو در هدر باز شود و فرد بتواند عبارت مورد نظر خود را در آن جستجو کند.
-یک آیکون پروفایل در هدر باشد که اگر فرد هنوز به صورت مهمان در سایت است با کلیک روی آن به مودال ثبت نام/ورود برود و اگر وارد شده به صفحه پروفایل خود هدایت شود.
-یک آیکون زبان در کنار لوگو وجود داشته باشد که فرد با کلیک روی آن یک منوی دراپ داون که در آن زبانهای پرکاربرد (حداکثر 2 زبان دیگر) و یک گزینه «....» یا «سایر زبانها» وجود داشته باشد که اگر روی گزینه سایر زده شد یک مودال برای نمایش تمام زبانهای در دسترس وجود داشته باشد و فرد بتواند از بین آنها زبان مورد نظر خود را انتخاب کند.
-یک آیکون چرخ دنده وجود داشته باشد که با کلیک روی آن یک مودال باز شود و در آن فرد بتواند تقویم، ارز مورد نظر خود و سایر تنظیمات ضروری را انجام دهد. (همه این موارد از طریق یک دکه در پروفایل و انتقال فرد به صفحه ستینگ نیز در دسترس فرد خواهد بود اینجا فقط دسترسیهای سریع فراهم می شود.)
-در زیر هدر مجموعه ای از فیلترها مثل فناوری، هوش مصنوعی و ... وجود داشته باشد که با کلیک هر فیلتر فعال/غیرفعال شود؛ اگر فیلتر مرتبطی وجود داشت فقط آن‌ها نمایش یابد؛ در غیر اینصورت همه فیلترها نمایش یابد ولی با کلیک فیلتر جدید، فیلتر قبلی غیرفعال شود. در سناریوی فیلتر ترکیبی، با کلیک فیلتر جدید، فیلتر شامل هر دو فعال شود و با کلیک مجدد غیرفعال گردد.
-کاشی دوره‌ها شبیه یوتیوب: ویدیوی مقدمه/معرفی (تصویر بندانگشتی یا اسنپ‌شات فریم). با کلیک تصویر، ویدیو پخش شود و در انتها سؤال «تمایل به شرکت در دوره؟» و امکان «نشان کردن» دوره داده شود. زیر ویدیو: تصویر پروفایل ناشر، سپس نام دوره (بولد) و توضیح یک‌خطی (باقی با …). کلیک روی تصویر ناشر → صفحه ناشر.
-متادیتا زیر آن: نام مدرس (کلیک → صفحه مدرس)، تعداد شرکت‌کننده، مدت زمان از انتشار (۲ ساعت پیش/…/۴ ماه پیش)، میانگین ستاره + آیکون ستاره زرد؛ کلیک روی سایر اجزا → بخش نظرات صفحه دوره. کاشی بدون حاشیه و مرز.
-صفحه لندینگ: یک کروسل ویدیوهای کوتاه (مانند اینستاگرام/یوتیوب Shorts)؛ کلیک روی یکی → پخش رشته‌ای از ویدیوها پشت‌سرهم.
-صفحه لندینگ: یک کروسل آزمون‌ها (شخصیت، هوش، درسی، راهنمایی و رانندگی، …).
-تواتر نمایش دوره‌ها و کروسل‌ها تنظیم‌پذیر باشد. با اسکرول، محتواهای جدید بارگذاری شود؛ امکان قرارگیری کروسل‌ها در میانه صفحه (مثلاً هر ۵ بلوک یک کروسل تست).
-پایین صفحه: لینک قوانین سایت و حریم شخصی.
-رنگ اصلی برند: آبی عمیق؛ رنگ دوم: ماسه‌ای؛ از رنگ سبز استفاده نشود.
-با تغییر زبان، نه فقط نام منوها، بلکه متن داخل منوها نیز ترجمه شود.
-مودال ثبت‌نام/ورود برای مهمان لازم است (در مراحل بعدی هم قابل تکمیل).
-فونت‌های مناسب‌تر (مشابه یوتیوب).
-در تب مرورگر، لوگو و نام Dunetube درج شود.
+# public pages (keep as-is)
+frontend/src/pages/Home.tsx
+frontend/src/pages/CourseDetail.tsx
+frontend/src/pages/Catalog.tsx
+frontend/src/pages/LessonPlayer.tsx
+frontend/src/pages/Checkout.tsx
+frontend/src/pages/Dashboard.tsx
+frontend/src/pages/Profile.tsx
 
-[USER_SPEC_EN]  (literal translation; no interpretation)
-Landing page must be like YouTube, with:
-- Header logo (click → landing).
-- Search icon (click → inline search field in header).
-- Profile icon: if guest → open login/signup modal; if logged-in → go to profile page.
-- Language icon near logo: dropdown with up to two common languages and an option “Other…”. Clicking “Other…” opens a modal with all available languages to choose from.
-- Gear icon: opens a modal for quick settings (calendar, currency, other essentials). These are also accessible later via profile/settings page; here it’s just quick access.
-- Below header: clickable filters (e.g., technology, AI…). Clicking toggles filter on/off. If related filters exist, show only related ones; otherwise show all. When unrelated, activating a new filter deactivates the previous. For combined filters: activating a new related filter creates a combined filter containing both; clicking it again deactivates/removes it.
-- Course tiles YouTube-like: show an intro video (thumbnail or snapshot). Clicking the thumbnail plays the video; at the end ask if the user wants to join the course and allow bookmarking.
-- Under the video: publisher avatar, then bold course title and a one-line description (ellipsis if long). Clicking the publisher image → publisher page.
-- Metadata row: teacher name (click → teacher page), participants count, time since publish (“2 hours ago”, “…”, “4 months ago”), average rating number + yellow star icon. Clicking other parts → comments section on course page. Tiles have no borders.
-- Landing has a carousel of short videos (like Instagram/YouTube). Clicking one plays a sequence of shorts back-to-back.
-- Landing has a carousel of tests (personality, IQ, school exams, traffic rules, etc.).
-- Tune frequency of courses vs. carousels; infinite scroll loads new content; carousels may appear mid-page (e.g., every 5 blocks a tests carousel).
-- Footer: links to Terms and Privacy.
-- Branding: deep blue as primary, sand as secondary; do not use green.
-- Language switch translates not only menu titles but also contents inside menus.
-- Login/Signup modal for guests (other states can be added later).
-- Prefer fonts similar to YouTube.
-- Browser tab shows favicon/logo and the name “Dunetube”.
-──────────────────────────────────────────────────────────────────────────────
-(End of file)
+# studio (teacher)
+frontend/src/pages/studio/StudioCourses.tsx
+frontend/src/pages/studio/StudioLessons.tsx
+frontend/src/pages/studio/StudioFiles.tsx
+frontend/src/pages/studio/StudioAssistants.tsx
+frontend/src/pages/studio/StudioReports.tsx
+frontend/src/pages/studio/StudioSettings.tsx
+frontend/src/pages/studio/CourseEditor.tsx
+frontend/src/pages/studio/_studioStore.ts
+
+# layout + ui helpers
+frontend/src/layouts/StudioLayout.tsx
+frontend/src/components/ui/Toast.tsx
+frontend/src/components/ui/Confirm.tsx
+[/CLEANUP_FRONTEND_WHITELIST]
+
+Rules:
+- Remove any other frontend files not listed above.
+- Keep folder structure exactly as shown.
+- After cleanup, ensure `npm run dev` builds successfully.
+- All import paths should be relative (no "@/").
+- Maintain TypeScript strict mode and Tailwind utilities.
+
+
+# =============================================================
+#  TEACHER STUDIO MVP SCOPE
+# =============================================================
+
+[STUDIO_SCOPE_MVP]
+Add/verify the following Studio (Teacher) features on frontend:
+
+- Routing:
+  - /studio (layout with fixed header + hamburger)
+  - Sidebar: push on desktop, off-canvas on mobile
+  - Nested routes:
+    • /studio → StudioCourses
+    • /studio/course/:id → CourseEditor (READ-ONLY)
+    • /studio/course/:id/edit → CourseEditor (EDIT for draft only)
+
+- Studio Layout:
+  - Header fixed, contains hamburger menu + logo + search + “New course” button
+  - Sidebar navigation items: Courses, Lessons, Files, Assistants, Reports, Settings
+  - ToastProvider + ConfirmProvider wrap the <Outlet/>
+
+- Courses Board (StudioCourses):
+  - Each course card shows:
+      status badge (draft/published/paused),
+      lessons count,
+      students count & rating (for published/paused).
+  - Actions:
+      • Draft → Edit / Publish
+      • Published → View / Pause
+      • Paused → View / Resume / Offer Migration
+  - Publish, Pause, Resume use Confirm dialogs.
+  - All actions trigger Toast notifications.
+  - Filter buttons (All/Draft/Published/Paused) and search input.
+  - Responsive grid layout (1–4 columns).
+  - Offer Migration modal:
+      - lists available draft courses as migration targets
+      - clicking “Send offer” displays Toast (API placeholder for now)
+
+- Course Editor (CourseEditor):
+  - Tabs: Details / Lessons / Resources
+  - READ-ONLY (for published/paused):
+      • All fields disabled
+      • Bottom button “Duplicate and edit” creates a NEW draft
+        with new UID and navigates to /edit
+  - EDIT (for draft + /edit path):
+      • Details tab: title, status, description
+      • Lessons tab:
+          - Add / remove / reorder lessons
+          - Each lesson has its own file inputs:
+              video, pdf, slides, exercise/other
+          - Reordering updates lesson numbering automatically
+      • Resources tab: upload placeholders for books/slides/tests
+  - Attachments use ObjectURL previews (mock, no backend yet)
+  - UID for each course is permanent and unique
+  - Draft duplication keeps structure but resets students/rating/files
+
+- UI Helpers:
+  - ToastProvider and ConfirmProvider implemented in
+    src/components/ui/Toast.tsx and src/components/ui/Confirm.tsx
+  - Mounted in StudioLayout (no "@/")
+
+Deliverables:
+- The above features fully implemented.
+- No runtime or TypeScript errors.
+- Dev server runs cleanly (`npm run dev`).
+- Studio fully usable: create/edit/publish/pause/resume/migrate courses.
+- Report final changelog of affected files.
+[/STUDIO_SCOPE_MVP]
+
+
+# =============================================================
+#  BACKEND PREPARATION (FOR NEXT PHASE)
+# =============================================================
+
+[BACKEND_PREP]
+- No major backend development in this phase.
+- Ensure existing Django REST endpoints (token, refresh, courses) respond correctly.
+- Prepare interface for Course/Lesson/Attachment/Migration endpoints to be integrated later.
+- All API placeholders (upload, migration offer) should log or alert the intended request for now.
+- Verify backend.md and phase1_2.json consistency.
+[/BACKEND_PREP]
+
+
+# =============================================================
+#  EXECUTION STEPS (for Codex)
+# =============================================================
+
+[RUN_PLAN]
+1. Execute CLEANUP_FRONTEND_WHITELIST (delete non-listed files).
+2. Verify that `npm run dev` runs cleanly (React + Vite + Tailwind).
+3. Implement all tasks under STUDIO_SCOPE_MVP.
+4. Ensure StudioLayout includes Toast and Confirm providers.
+5. Test all user flows manually (Edit / View / Duplicate / Migration).
+6. Report completion with a changelog and screenshots.
+[/RUN_PLAN]
+
+
+# =============================================================
+#  CHECKPOINT UPDATE (phase1_2.json)
+# =============================================================
+
+[CHECKPOINT_UPDATE]
+Add new milestone to phase1_2.json:
+
+{
+  "id": "studio_mvp",
+  "title": "Teacher Studio MVP (routing, view/edit, duplicate, migration, lessons uploads, reorder, toasts/confirms)",
+  "done": false
+}
+
+Mark previous steps as done if verified.
+After Codex runs successfully, set done=true.
+[/CHECKPOINT_UPDATE]
+
+
+# =============================================================
+#  NOTES
+# =============================================================
+
+[NOTES]
+- Use existing docs: README.md, ROADMAP.md, frontend.md, backend.md
+- Maintain existing branding (deepBlue #0A355C, sand #E8DCC8)
+- Avoid unnecessary dependency installs.
+- Do not rename folders or change file casing.
+- Keep all file paths relative (no "@/").
+- After success, prepare phase3 plan for backend/API/infra expansion.
+[/NOTES]

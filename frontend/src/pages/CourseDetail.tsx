@@ -1,431 +1,494 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { useTranslation } from "react-i18next";
+import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 
-import { usePreferences } from "../context/PreferencesContext";
-import { getCourse, listCourseReviews, listLessons } from "../lib/api";
-import type { Course } from "../types/course";
-import type { Lesson } from "../types/lesson";
-import type { Review } from "../types/review";
-import { formatCurrencyForDisplay, formatDateTime, formatRelativeTimeFromNow } from "../utils/intl";
-import { ApiError } from "../types/api";
+const BRAND = { deepBlue: "#0A355C", sand: "#E8DCC8" };
 
-type FetchState = "idle" | "loading" | "success" | "error";
-type DetailTab = "overview" | "lessons" | "reviews";
+// ===== Types =====
+type Course = {
+  id: number;
+  title: string;
+  teacher?: string;
+  organization?: string;
+  thumbnail?: string;
+  rating_avg?: number;
+  students_count?: number;
+  description?: string;
+  purchased?: boolean;
+  last_update?: string;
+};
+type Lesson = { id: number; title: string; duration_minutes: number };
+type QA = { id: number; question: string; answer?: string };
+type Review = { id: number; user: string; comment: string; rating: number };
 
-const formatDuration = (value: number) => {
-  if (!Number.isFinite(value)) {
-    return "00:00";
+// ===== Mock Data =====
+const mockCourse: Course = {
+  id: 1,
+  title: "Mastering Prompt Engineering",
+  teacher: "Dr. Sara AI",
+  organization: "Future Minds Academy",
+  rating_avg: 4.7,
+  students_count: 12840,
+  description:
+    "Learn to design effective prompts for AI models, evaluate outputs, and apply best practices to real products. This course balances theory and hands-on labs so you can ship confidently.",
+  purchased: false,
+  last_update: new Date(Date.now() - 9 * 86400000).toISOString(),
+};
+const mockLessons: Lesson[] = Array.from({ length: 24 }, (_, i) => ({
+  id: i + 1,
+  title: `Lesson ${i + 1}: Concept ${(i + 1) * 5}`,
+  duration_minutes: 8 + (i % 6) * 4,
+}));
+const mockQA: QA[] = [
+  { id: 1, question: "Do I need prior programming knowledge?", answer: "No. We start from basics and build up gradually." },
+  { id: 2, question: "Is there a certificate?", answer: "Yes, a shareable certificate is issued upon completion." },
+  { id: 3, question: "Can I access updates later?", answer: "Lifetime access to all updates is included." },
+  { id: 4, question: "Is there any project?", answer: "Yes, two capstone projects with feedback." },
+];
+const mockReviews: Review[] = [
+  { id: 1, user: "Sara", comment: "Clear, practical and up-to-date!", rating: 5 },
+  { id: 2, user: "Ali", comment: "Loved the examples. Highly recommended.", rating: 5 },
+  { id: 3, user: "Lina", comment: "Great pacing and structure.", rating: 4 },
+  { id: 4, user: "Omid", comment: "Exactly what I needed for work.", rating: 5 },
+  { id: 5, user: "Neda", comment: "Very useful tips.", rating: 4 },
+];
+
+// ===== Helpers =====
+const timeSince = (iso?: string) => {
+  if (!iso) return "";
+  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  const units: [string, number][] = [
+    ["y", 31536000],
+    ["mo", 2592000],
+    ["w", 604800],
+    ["d", 86400],
+    ["h", 3600],
+    ["m", 60],
+  ];
+  for (const [label, secs] of units) {
+    const val = Math.floor(diff / secs);
+    if (val >= 1) return `${val}${label} ago`;
   }
-  const total = Math.max(0, Math.floor(value));
-  const minutes = Math.floor(total / 60)
-    .toString()
-    .padStart(2, "0");
-  const seconds = (total % 60).toString().padStart(2, "0");
-  return `${minutes}:${seconds}`;
+  return "now";
 };
 
-const resolveDisplayName = (review: Review) => {
-  const firstName = review.user.first_name?.trim();
-  const lastName = review.user.last_name?.trim();
-  const fullName = [firstName, lastName].filter(Boolean).join(" ").trim();
-  return fullName.length > 0 ? fullName : review.user.username;
-};
+// ===== LocalStorage Keys & utils =====
+const LS_WISHLIST = "dt_wishlist";         // number[] of course ids
+const LS_PROGRESS = "dt_progress";         // { [courseId: string]: number (lessonId) }
 
-const normalizeRating = (value: Course["rating_avg"]): string => {
-  const parsed = Number.parseFloat(String(value ?? 0));
-  if (Number.isNaN(parsed)) {
-    return "0.0";
+function readWishlist(): number[] {
+  try {
+    const raw = localStorage.getItem(LS_WISHLIST);
+    return raw ? (JSON.parse(raw) as number[]) : [];
+  } catch {
+    return [];
   }
-  return parsed.toFixed(1);
+}
+function writeWishlist(ids: number[]) {
+  localStorage.setItem(LS_WISHLIST, JSON.stringify(ids));
+}
+function isWishlisted(courseId: number): boolean {
+  return readWishlist().includes(courseId);
+}
+function toggleWishlistLS(courseId: number): boolean {
+  const current = readWishlist();
+  const idx = current.indexOf(courseId);
+  if (idx >= 0) {
+    current.splice(idx, 1);
+    writeWishlist(current);
+    return false;
+  } else {
+    current.push(courseId);
+    writeWishlist(current);
+    return true;
+  }
+}
+
+function readProgress(): Record<string, number> {
+  try {
+    const raw = localStorage.getItem(LS_PROGRESS);
+    return raw ? (JSON.parse(raw) as Record<string, number>) : {};
+  } catch {
+    return {};
+  }
+}
+function writeProgress(map: Record<string, number>) {
+  localStorage.setItem(LS_PROGRESS, JSON.stringify(map));
+}
+function getLastLesson(courseId: number): number {
+  const map = readProgress();
+  return map[String(courseId)] ?? 1;
+}
+function setLastLesson(courseId: number, lessonId: number) {
+  const map = readProgress();
+  map[String(courseId)] = lessonId;
+  writeProgress(map);
+}
+
+// ===== Icons =====
+const Icon = {
+  Hamburger: () => (
+    <svg viewBox="0 0 24 24" width="22" height="22">
+      <path fill="currentColor" d="M3 6h18v2H3V6Zm0 5h18v2H3v-2Zm0 5h18v2H3v-2Z" />
+    </svg>
+  ),
+  Logo: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24">
+      <rect x="3" y="5" width="18" height="14" rx="4" fill="currentColor" />
+      <polygon points="10,9 16,12 10,15" fill="white" />
+    </svg>
+  ),
+  Search: () => (
+    <svg viewBox="0 0 24 24" width="18" height="18">
+      <path fill="currentColor" d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 10-1.06 1.06l.27.28v.79L20 19.5 19.5 20l-3.99-4zM10.5 14A3.5 3.5 0 1114 10.5 3.5 3.5 0 0110.5 14z"/>
+    </svg>
+  ),
+  User: () => (
+    <svg viewBox="0 0 24 24" width="20" height="20">
+      <path fill="currentColor" d="M12 12a5 5 0 100-10 5 5 0 000 10Zm0 2c-4.4 0-8 2.24-8 5v1h16v-1c0-2.76-3.6-5-8-5Z" />
+    </svg>
+  ),
+  Play: () => (
+    <svg width="48" height="48" viewBox="0 0 24 24">
+      <path d="M10 8l6 4-6 4V8z" fill="currentColor" />
+    </svg>
+  ),
+   Heart: ({ filled = false, color = BRAND.deepBlue }: { filled?: boolean; color?: string }) => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill={filled ? color : "none"}
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="transition-all duration-200"
+    >
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z" />
+    </svg>
+  ),
 };
 
-const CourseDetail = () => {
-  const { t, i18n } = useTranslation();
-  const navigate = useNavigate();
-  const { courseId } = useParams<{ courseId: string }>();
-  const { currency, dateStyle } = usePreferences();
-
+// ===== Main Component =====
+export default function CourseDetail() {
+  // data
   const [course, setCourse] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [qa, setQa] = useState<QA[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [status, setStatus] = useState<FetchState>("idle");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<DetailTab>("overview");
-  const [bookmarkActive, setBookmarkActive] = useState(false);
 
+  // UI state
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [lang, setLang] = useState<"FA" | "EN">("EN");
+  const [isAuth, setIsAuth] = useState(false);
+  const [search, setSearch] = useState("");
+
+  // wishlist & progress state
+  const [wishlisted, setWishlisted] = useState(false);
+  const [lastLesson, setLastLessonState] = useState<number>(1);
+
+  // responsive panel width
+  const [panelW, setPanelW] = useState(window.innerWidth < 1400 ? 300 : 360);
   useEffect(() => {
-    if (!courseId) {
-      setStatus("error");
-      setErrorMessage(t("course.errors.notFound"));
-      return;
-    }
+    const onResize = () => setPanelW(window.innerWidth < 1400 ? 300 : 360);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
-    const controller = new AbortController();
+  // load mock & LS-based states
+  useEffect(() => {
+    setCourse(mockCourse);
+    setLessons(mockLessons);
+    setQa(mockQA);
+    setReviews(mockReviews);
+  }, []);
+  useEffect(() => {
+    if (!course) return;
+    setWishlisted(isWishlisted(course.id));
+    setLastLessonState(getLastLesson(course.id));
+  }, [course?.id]); // run when course id becomes available
 
-    const load = async () => {
-      try {
-        setStatus("loading");
-        setErrorMessage(null);
+  const paddingLeftWhenOpen = panelOpen ? panelW : 0;
 
-        const [coursePayload, lessonsPayload, reviewsPayload] = await Promise.all([
-          getCourse(courseId, { signal: controller.signal }),
-          listLessons(courseId, { signal: controller.signal }),
-          listCourseReviews(courseId, { signal: controller.signal }),
-        ]);
+  const filteredLessons = useMemo(() => {
+    if (!search.trim()) return lessons;
+    const q = search.toLowerCase();
+    return lessons.filter((l) => l.title.toLowerCase().includes(q));
+  }, [lessons, search]);
 
-        setCourse(coursePayload);
-        setLessons(Array.isArray(lessonsPayload) ? lessonsPayload : lessonsPayload ?? []);
-        setReviews(Array.isArray(reviewsPayload) ? reviewsPayload : reviewsPayload ?? []);
-        setStatus("success");
-      } catch (error) {
-        if (controller.signal.aborted) {
-          return;
-        }
-        console.error("Failed to load course detail", error);
-        setStatus("error");
-        if (error instanceof ApiError && error.status === 404) {
-          setErrorMessage(t("course.errors.notFound"));
-        } else {
-          setErrorMessage(
-            error instanceof ApiError && error.payload?.detail
-              ? error.payload.detail
-              : t("course.errors.generic"),
-          );
-        }
-      }
-    };
-
-    void load();
-    return () => controller.abort();
-  }, [courseId, t]);
-
-  const priceDisplay = useMemo(() => {
-    if (!course) {
-      return "";
-    }
-    return formatCurrencyForDisplay(course.price_amount, course.price_currency, currency, i18n.language);
-  }, [course, currency, i18n.language]);
-
-  const publishedAt = useMemo(() => {
-    if (!course?.published_at) {
-      return "";
-    }
-    return formatDateTime(course.published_at, i18n.language, dateStyle);
-  }, [course?.published_at, dateStyle, i18n.language]);
-
-  const publishedRelative = useMemo(() => {
-    if (!course?.published_at) {
-      return "";
-    }
-    return formatRelativeTimeFromNow(course.published_at, i18n.language);
-  }, [course?.published_at, i18n.language]);
-
-  const sortedLessons = useMemo(
-    () => [...lessons].sort((a, b) => a.order - b.order),
-    [lessons],
-  );
-
-  const firstLesson = sortedLessons[0] ?? null;
-  const teacherName = course?.teacher?.name ?? t("course.meta.teacherUnknown");
-  const ratingValue = course ? normalizeRating(course.rating_avg) : "0.0";
-  const tabs: Array<{ id: DetailTab; label: string }> = [
-    { id: "overview", label: t("course.tabs.overview") },
-    { id: "lessons", label: t("course.tabs.lessons") },
-    { id: "reviews", label: t("course.tabs.reviews") },
-  ];
-
-  const handleJoinCourse = () => {
-    if (firstLesson) {
-      navigate(`/watch/${firstLesson.id}`);
-    } else if (course) {
-      navigate(`/courses/${course.id}`);
-    }
+  const handleToggleWishlist = () => {
+    if (!course) return;
+    const newState = toggleWishlistLS(course.id);
+    setWishlisted(newState);
   };
 
-  if (status === "loading") {
-    return (
-      <section className="mx-auto w-full max-w-6xl px-4 md:px-6 py-16">
-        <div className="space-y-6">
-          <div className="h-12 w-3/4 animate-pulse rounded-full bg-slate-100" />
-          <div className="h-80 animate-pulse rounded-[36px] bg-slate-100" />
-          <div className="grid gap-4 md:grid-cols-2">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="h-48 animate-pulse rounded-3xl bg-slate-100" />
-            ))}
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  if (status === "error") {
-    return (
-      <section className="mx-auto w-full max-w-4xl px-4 md:px-6 py-16">
-        <div className="space-y-6 rounded-3xl border border-rose-200 bg-rose-50 p-6 text-slate-600">
-          <p>{errorMessage}</p>
-          <Link
-            to="/"
-            className="golden-click inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-gold transition hover:border-brand-gold hover:bg-brand-gold/10"
-          >
-            {t("course.actions.backToCatalog")}
-          </Link>
-        </div>
-      </section>
-    );
-  }
-
-  if (!course) {
-    return null;
-  }
+  const handleLessonClick = (lessonId: number) => {
+    if (!course) return;
+    setLastLesson(course.id, lessonId);
+    setLastLessonState(lessonId);
+  };
 
   return (
-    <section className="mx-auto w-full max-w-6xl space-y-10 px-4 md:px-6 py-16">
-      <article className="relative overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-xl">
-        {course.thumbnail_url ? (
-          <img
-            src={course.thumbnail_url}
-            alt={course.title}
-            className="absolute inset-0 h-full w-full object-cover opacity-20"
-            loading="lazy"
-          />
-        ) : null}
-        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-white" aria-hidden />
-        <div className="relative z-10 flex flex-col gap-8 p-8 md:flex-row md:items-end md:justify-between md:p-12">
-          <div className="space-y-4 text-start">
-            <div className="flex items-center gap-3 text-sm text-brand-gold">
-              <Link
-                to={`/publishers/${course.publisher.slug}`}
-                className="golden-click inline-flex items-center gap-2 rounded-full bg-brand-gold/10 px-3 py-1 font-semibold text-brand-gold transition hover:bg-brand-gold/20"
-              >
-                {course.publisher.name}
-              </Link>
-              <span className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-3 py-1 text-xs uppercase tracking-[0.2em] text-slate-600">
-                {course.language.toUpperCase()}
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+      {/* ===== HEADER ===== */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b">
+        <div className="max-w-screen-xl w-full mx-auto h-16 flex items-center gap-3 px-3 sm:px-6">
+          <button
+            onClick={() => setPanelOpen((v) => !v)}
+            className="p-2 rounded hover:bg-gray-100"
+            aria-label="Menu"
+          >
+            <Icon.Hamburger />
+          </button>
+
+          <div
+            className="w-9 h-9 rounded-lg flex items-center justify-center text-white"
+            style={{ background: BRAND.deepBlue }}
+            aria-label="Dunetube"
+          >
+            <Icon.Logo />
+          </div>
+          <span
+            className="hidden sm:block font-semibold text-[clamp(1rem,1.6vw,1.125rem)]"
+            style={{ color: BRAND.deepBlue }}
+          >
+            Dunetube
+          </span>
+
+          {/* search */}
+          <div className="flex-1 max-w-2xl">
+            <div className="relative">
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 rounded-lg border text-[clamp(.9rem,1.2vw,1rem)]"
+                placeholder={lang === "FA" ? "جست‌وجو در دروس..." : "Search lessons…"}
+              />
+              <span className="absolute left-3 top-2.5 text-gray-500">
+                <Icon.Search />
               </span>
             </div>
-            <h1 className="font-display text-4xl font-bold leading-tight text-slate-900 md:text-5xl">
-              {course.title}
-            </h1>
-            <p className="max-w-3xl text-sm text-slate-600 md:text-base">{course.description}</p>
-            {course.tags?.length ? (
-              <ul className="flex flex-wrap gap-2 text-xs text-slate-600">
-                {course.tags.slice(0, 6).map((tag) => (
-                  <li key={tag} className="rounded-full bg-white px-3 py-1">
-                    #{tag}
-                  </li>
-                ))}
-                {course.tags.length > 6 ? (
-                  <li className="rounded-full bg-white px-3 py-1">+{course.tags.length - 6}</li>
-                ) : null}
-              </ul>
-            ) : null}
           </div>
 
-          <div className="flex flex-col items-stretch gap-3 rounded-3xl border border-brand-gold/20 bg-white p-4 text-sm text-slate-600">
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-sm font-semibold text-brand-gold">{priceDisplay}</span>
-              <span className="text-xs uppercase tracking-[0.28em] text-slate-500">
-                {t("course.meta.priceLabelShort")}
-              </span>
-            </div>
-            <div className="flex items-center justify-between gap-4 border-t border-slate-200 pt-3 text-xs text-slate-600">
-              <span className="inline-flex items-center gap-2">
-                <svg className="h-4 w-4 text-brand-gold" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-3.086 0-9 1.543-9 4.63V20a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-1.37C21 15.543 15.086 14 12 14Z" />
-                </svg>
-                <Link
-                  to={course.teacher?.id ? `/teachers/${course.teacher.id}` : "#"}
-                  className="transition hover:text-brand-gold"
-                >
-                  {t("course.meta.teacher", { teacher: teacherName })}
-                </Link>
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <svg className="h-4 w-4 text-brand-gold" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="m12 2-10 5v2h1v11h18V9h1V7Zm7 16H5V9h14Zm-7-7a3 3 0 1 0-3-3 3 3 0 0 0 3 3Z" />
-                </svg>
-                {t("course.meta.language", { language: course.language.toUpperCase() })}
-              </span>
-            </div>
-            <div className="flex items-center justify-between gap-4 text-xs text-slate-600">
-              <span className="inline-flex items-center gap-2">
-                <svg className="h-4 w-4 text-brand-gold" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M21 3H3a1 1 0 0 0-1 1v16a1 1 0 0 0 1.555.832L12 16.202l8.445 4.63A1 1 0 0 0 22 20V4a1 1 0 0 0-1-1Z" />
-                </svg>
-                {t("course.meta.participants", { count: course.participants_count })}
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <svg className="h-4 w-4 text-brand-gold" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 8a4 4 0 1 0 4 4 4 4 0 0 0-4-4Zm0-6a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2Zm0 18a7.956 7.956 0 0 1-5.272-2h10.544A7.956 7.956 0 0 1 12 20Z" />
-                </svg>
-                {publishedRelative
-                  ? t("course.meta.publishedRelative", { time: publishedRelative })
-                  : t("course.meta.publishedAt", { date: publishedAt })}
-              </span>
-            </div>
-            <div className="flex items-center justify-between gap-4 text-xs text-slate-600">
-              <span className="inline-flex items-center gap-2">
-                <svg className="h-4 w-4 text-brand-gold" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.62L12 2 9.19 8.62 2 9.24l5.46 4.73L5.82 21z" />
-                </svg>
-                {t("course.meta.rating", { rating: ratingValue })}
-              </span>
-              <span className="text-xs uppercase tracking-[0.28em] text-slate-500">{publishedAt}</span>
-            </div>
-            <div className="mt-2 flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleJoinCourse}
-                className="golden-click inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-brand-gold px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-white transition hover:bg-brand-gold/90"
-              >
-                <span>▶</span>
-                {firstLesson ? t("course.cta.watchFirst") : t("course.cta.join")}
-              </button>
-              <button
-                type="button"
-                onClick={() => setBookmarkActive((value) => !value)}
-                aria-pressed={bookmarkActive}
-                className={`golden-click inline-flex h-10 w-10 items-center justify-center rounded-full border ${bookmarkActive ? "border-brand-gold bg-brand-gold/15 text-brand-gold" : "border-slate-200 text-brand-gold"} transition hover:border-brand-gold/50`}
-                title={t("course.actions.bookmark")}
-              >
-                <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M17 3H7a2 2 0 0 0-2 2v16l7-4 7 4V5a2 2 0 0 0-2-2Z" />
-                </svg>
-              </button>
-            </div>
+          {/* language */}
+          <div className="ml-2">
+            <button
+              onClick={() => setLang((l) => (l === "EN" ? "FA" : "EN"))}
+              className="px-3 py-2 rounded border text-sm"
+              title="Toggle language"
+            >
+              {lang}
+            </button>
+          </div>
+
+          {/* auth */}
+          <div className="ml-2">
+            <button
+              onClick={() => setIsAuth((v) => !v)}
+              className="p-2 rounded hover:bg-gray-100"
+              title={isAuth ? "Profile" : "Login"}
+            >
+              <Icon.User />
+            </button>
           </div>
         </div>
-      </article>
+      </header>
 
-      <div className="flex flex-wrap items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600">
-        <span className="inline-flex items-center gap-2">
-          <span className="h-2.5 w-2.5 rounded-full bg-brand-gold shadow-glow-gold" />
-          {t("catalog.metadata.viewComments")}
-        </span>
-        <span className="inline-flex items-center gap-2 text-slate-500">
-          <span className="h-2.5 w-2.5 rounded-full bg-slate-200" />
-          {t("catalog.metadata.joinCourse")}
-        </span>
-      </div>
-
-      <nav className="flex flex-wrap items-center gap-3 rounded-full border border-slate-200 bg-white p-2 text-xs font-semibold uppercase tracking-[0.28em] text-slate-600">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setActiveTab(tab.id)}
-            className={`golden-click inline-flex items-center rounded-full px-4 py-2 transition ${
-              activeTab === tab.id ? "bg-brand-gold text-brand-night" : "text-slate-600 hover:bg-slate-200/60 hover:text-slate-900"
-            }`}
-            aria-pressed={activeTab === tab.id}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </nav>
-
-      {activeTab === "overview" ? (
-        <section className="space-y-4 rounded-3xl border border-slate-200 bg-white p-6">
-          <h2 className="font-display text-2xl font-semibold text-slate-900">{t("course.overview.title")}</h2>
-          <p className="text-sm text-slate-600">{course.description}</p>
-          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-            <span>{t("course.meta.price", { price: priceDisplay })}</span>
-            <span>{t("course.meta.teacher", { teacher: teacherName })}</span>
-            <span>{t("course.meta.participants", { count: course.participants_count })}</span>
+      {/* ===== SETTINGS PANEL (pushes content) ===== */}
+      {panelOpen && (
+        <aside
+          className="fixed left-0 top-16 bottom-0 z-40 border-r bg-white overflow-y-auto"
+          style={{ width: panelW }}
+          aria-label="Settings panel"
+        >
+          <div className="p-4 text-sm text-gray-700 space-y-6">
+            <div className="font-semibold mb-2" style={{ color: BRAND.deepBlue }}>
+              Settings
+            </div>
+            <div className="space-y-2">
+              <div className="font-medium">Theme</div>
+              <div className="flex gap-2">
+                <button className="px-3 py-2 rounded border">Light</button>
+                <button className="px-3 py-2 rounded border">Dark</button>
+                <button className="px-3 py-2 rounded border">System</button>
+              </div>
+            </div>
+            <div className="mt-4 space-y-2">
+              <div className="font-medium">Language</div>
+              <div className="flex gap-2">
+                <button className="px-3 py-2 rounded border">FA</button>
+                <button className="px-3 py-2 rounded border">EN</button>
+              </div>
+            </div>
+            <div className="mt-4 space-y-2">
+              <div className="font-medium">Account</div>
+              {isAuth ? (
+                <div className="rounded border p-3">Signed in • Profile & Security</div>
+              ) : (
+                <button className="px-3 py-2 rounded-lg text-white" style={{ background: BRAND.deepBlue }}>
+                  {lang === "FA" ? "ورود / ثبت‌نام" : "Sign in / Sign up"}
+                </button>
+              )}
+            </div>
           </div>
-        </section>
-      ) : null}
+        </aside>
+      )}
 
-      {activeTab === "lessons" ? (
-        <section className="space-y-6">
-          <header className="flex items-center justify-between gap-4">
-            <h2 className="font-display text-2xl font-semibold text-slate-900">{t("course.lessons.title")}</h2>
-            <span className="text-xs uppercase tracking-[0.26em] text-slate-500">
-              {t("course.lessons.count", { count: sortedLessons.length })}
-            </span>
-          </header>
-          {!sortedLessons.length ? (
-            <p className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
-              {t("course.lessons.empty")}
-            </p>
-          ) : (
-            <ol className="space-y-4">
-              {sortedLessons.map((lesson) => (
-                <li
-                  key={lesson.id}
-                  className="rounded-3xl border border-slate-200 bg-white p-5 transition hover:border-brand-gold/40"
-                >
-                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div className="space-y-2">
-                      <p className="text-xs font-semibold uppercase tracking-[0.26em] text-brand-gold">
-                        {t("course.lessons.lessonLabel", { order: lesson.order })}
-                      </p>
-                      <h3 className="text-lg font-semibold text-slate-900">{lesson.title}</h3>
-                      {lesson.description ? (
-                        <p className="text-sm text-slate-600">{lesson.description}</p>
-                      ) : null}
-                      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                        <span>{formatDuration(lesson.duration_seconds)}</span>
-                        {lesson.is_free_preview ? (
-                          <span className="rounded-full border border-brand-gold/40 px-3 py-1 text-brand-gold">
-                            {t("course.lessons.preview")}
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
-                    {lesson.video_url ? (
-                      <a
-                        href={lesson.video_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="golden-click inline-flex items-center justify-center rounded-full border border-brand-gold/30 px-5 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-brand-gold hover:bg-brand-gold/10"
+      {/* ===== PAGE CONTENT ===== */}
+      <div className="pt-[80px]" style={{ paddingLeft: paddingLeftWhenOpen }}>
+        <main className="max-w-screen-xl w-full mx-auto px-3 sm:px-5 py-6">
+          {/* TOP: video left, info+description right */}
+          <div className="flex flex-col lg:flex-row gap-6 mb-6">
+            <div className="lg:w-2/3">
+              <div className="relative overflow-hidden rounded-xl aspect-video bg-gray-200 flex items-center justify-center text-gray-600">
+                {course?.thumbnail ? (
+                  <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
+                ) : (
+                  <Icon.Play />
+                )}
+              </div>
+            </div>
+
+            <div className="flex-1 flex flex-col justify-start overflow-y-auto">
+              <h1 className="text-[clamp(1.3rem,2vw,1.6rem)] font-semibold mb-2">
+                {course?.title}
+              </h1>
+              <div className="text-[clamp(.9rem,1.3vw,1rem)] text-gray-700 mb-3">
+                {course?.organization && (
+                  <>
+                    <span className="font-medium text-gray-800">{course.organization}</span>
+                    <span className="mx-1">•</span>
+                  </>
+                )}
+                {course?.teacher}
+              </div>
+              <div className="text-[clamp(.85rem,1.2vw,.95rem)] text-gray-600 mb-4">
+                ★ {course?.rating_avg} • {(course?.students_count ?? 0).toLocaleString()} {lang === "FA" ? "دانشجو" : "students"} • {timeSince(course?.last_update)}
+              </div>
+
+              <div className="flex flex-wrap gap-3 mb-5">
+                {course?.purchased ? (
+                  <Link to={`/course/${course?.id}/lesson/${lastLesson || 1}`}>
+                    <button className="px-5 py-2 rounded-lg text-white font-medium" style={{ background: BRAND.deepBlue }}>
+                      {lang === "FA" ? "ادامه دوره" : "Continue Course"}
+                    </button>
+                  </Link>
+                ) : (
+                  <>
+                    <Link to={`/course/${course?.id}/checkout`}>
+                      <button
+                        className="px-5 py-2 rounded-lg text-white font-medium"
+                        style={{ background: BRAND.deepBlue }}
                       >
-                        {t("course.lessons.watch")}
-                      </a>
-                    ) : null}
-                  </div>
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      ) : null}
+                        {lang === "FA" ? "ثبت‌نام" : "Enroll Now"}
+                      </button>
+                    </Link>
 
-      {activeTab === "reviews" ? (
-        <section className="space-y-6">
-          <header className="flex items-center justify-between gap-4">
-            <h2 className="font-display text-2xl font-semibold text-slate-900">{t("course.reviews.title")}</h2>
-            <span className="text-xs uppercase tracking-[0.26em] text-slate-500">
-              {t("course.reviews.count", { count: reviews.length })}
-            </span>
-          </header>
-          {!reviews.length ? (
-            <p className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
-              {t("course.reviews.empty")}
-            </p>
-          ) : (
-            <ul className="space-y-4">
-              {reviews.map((review) => (
-                <li key={review.id} className="rounded-3xl border border-slate-200 bg-white p-5">
-                  <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
-                    <span className="font-semibold text-slate-900">{resolveDisplayName(review)}</span>
-                    <span className="rounded-full border border-brand-gold/30 px-3 py-1 text-xs text-brand-gold">
-                      {t("course.reviews.rating", { rating: review.rating })}
-                    </span>
-                    <span className="text-xs uppercase tracking-[0.26em] text-slate-500">
-                      {formatDateTime(review.created_at, i18n.language, "medium")}
-                    </span>
+                    {/* Wishlist toggle (persistent) */}
+                    <button
+                      className={`px-5 py-2 rounded-lg border font-medium inline-flex items-center gap-2`}
+                      style={{ borderColor: BRAND.deepBlue, color: BRAND.deepBlue }}
+                      onClick={handleToggleWishlist}
+                      title={wishlisted ? (lang === "FA" ? "حذف از نشان‌ها" : "Remove from wishlist") : (lang === "FA" ? "افزودن به نشان‌ها" : "Add to wishlist")}
+                    >
+                      <Icon.Heart filled={wishlisted} />
+                      {wishlisted
+                        ? (lang === "FA" ? "در نشان‌هاست" : "Wishlisted")
+                        : (lang === "FA" ? "نشان کردن" : "Add to Wishlist")}
+                    </button>
+
+                    {/* دکمهٔ نمایشی برای تست: خریداری‌شده */}
+                    <button
+                      className="px-5 py-2 rounded-lg border font-medium"
+                      onClick={() => setCourse((c) => (c ? { ...c, purchased: true } : c))}
+                    >
+                      Demo: Mark Purchased
+                    </button>
+                  </>
+                )}
+              </div>
+
+              <p className="text-[clamp(.9rem,1.2vw,1rem)] text-gray-700 leading-7 whitespace-pre-line">
+                {course?.description}
+              </p>
+            </div>
+          </div>
+
+          {/* BOTTOM: grid WITHOUT fixed height (page can scroll fully) */}
+          <div className="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-6">
+            {/* LEFT: Lessons (click stores last-lesson progress) */}
+            <div className="pr-2">
+              <section>
+                <h2 className="text-[clamp(1rem,1.6vw,1.25rem)] font-semibold mb-3" style={{ color: BRAND.deepBlue }}>
+                  {lang === "FA" ? "فهرست دروس" : "Curriculum"}
+                </h2>
+                <ul className="divide-y rounded-xl border bg-white">
+                  {filteredLessons.map((l) => (
+                    <li key={l.id} className="p-3 flex items-center justify-between">
+                      <Link
+                        to={`/course/${course?.id}/lesson/${l.id}`}
+                        onClick={() => handleLessonClick(l.id)}
+                        className="text-[clamp(.92rem,1.2vw,1rem)] hover:underline"
+                      >
+                        {l.title}
+                      </Link>
+                      <span className="text-sm text-gray-500">{l.duration_minutes} min</span>
+                    </li>
+                  ))}
+                </ul>
+                {/* نمایش درس آخر */}
+                <div className="text-xs text-gray-600 mt-2">
+                  {lang === "FA" ? "آخرین درس ثبت شده: " : "Last recorded lesson: "}
+                  <strong>{lastLesson}</strong>
+                </div>
+              </section>
+            </div>
+
+            {/* RIGHT: Q&A + Reviews — each scrollable box (≈ 3 items tall) */}
+            <div className="pl-2">
+              <section className="mb-6">
+                <h2 className="text-[clamp(1rem,1.6vw,1.25rem)] font-semibold mb-3" style={{ color: BRAND.deepBlue }}>
+                  Q&A
+                </h2>
+                <div className="rounded-xl border bg-white p-3 overflow-y-auto max-h-80">
+                  <div className="space-y-3">
+                    {qa.map((q) => (
+                      <div key={q.id} className="rounded-lg border p-3 text-gray-700">
+                        <p className="font-medium">{q.question}</p>
+                        {q.answer ? (
+                          <p className="text-sm text-gray-600 mt-1">{q.answer}</p>
+                        ) : (
+                          <p className="text-sm text-gray-400 mt-1">(No answer yet)</p>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                  {review.text ? <p className="mt-3 text-sm text-slate-600">{review.text}</p> : null}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      ) : null}
-    </section>
+                </div>
+              </section>
+
+              <section>
+                <h2 className="text-[clamp(1rem,1.6vw,1.25rem)] font-semibold mb-3" style={{ color: BRAND.deepBlue }}>
+                  {lang === "FA" ? "نظرات" : "Reviews"}
+                </h2>
+                <div className="rounded-xl border bg-white p-3 overflow-y-auto max-h-80">
+                  <div className="space-y-3">
+                    {reviews.map((r) => (
+                      <div key={r.id} className="rounded-lg border p-3 text-gray-700">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-medium">{r.user}</span>
+                          <span className="text-sm text-yellow-600">{"★".repeat(r.rating)}</span>
+                        </div>
+                        <p className="text-sm text-gray-600">{r.comment}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
   );
-};
-
-export default CourseDetail;
+}
