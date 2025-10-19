@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { ToastProvider } from "@/components/ui/Toast";
-import { ConfirmProvider } from "@/components/ui/Confirm";
+import { ToastProvider } from "../components/ui/Toast";
+import { ConfirmProvider } from "../components/ui/Confirm";
 
 const BRAND = { deepBlue: "#0A355C", sand: "#E8DCC8" };
 const PANEL_W = 260;

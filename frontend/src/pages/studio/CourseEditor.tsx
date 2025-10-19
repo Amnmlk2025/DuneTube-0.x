@@ -12,7 +12,7 @@ import {
   renameLesson,
   attachToLesson,
 } from "./_studioStore";
-import { useToast } from "@/components/ui/Toast";
+import { useToast } from "../../components/ui/Toast";
 
 const BRAND = { deepBlue: "#0A355C" };
 

@@ -8,8 +8,8 @@ import {
   pauseCourse,
   resumeCourse,
 } from "./_studioStore";
-import { useToast } from "@/components/ui/Toast";
-import { useConfirm } from "@/components/ui/Confirm";
+import { useToast } from "../../components/ui/Toast";
+import { useConfirm } from "../../components/ui/Confirm";
 
 const BRAND = { deepBlue: "#0A355C", sand: "#E8DCC8" };
 const cx = (...xs: (string | false | null | undefined)[]) => xs.filter(Boolean).join(" ");
